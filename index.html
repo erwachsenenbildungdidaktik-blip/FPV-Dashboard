@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>FPV OPS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Persönliches FPV-Cockpit: Akkus, Flugbuch, Trainingsprogression und Checklisten.">
+<meta name="theme-color" content="#08090b">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FPV OPS">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./assets/icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="./assets/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand__bar"></span>
+      <div>
+        <div class="brand__name">FPV OPS</div>
+        <div class="brand__sub">Seeker 3 · A1/A3</div>
+      </div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="btn btn--sm btn--ghost" data-act="export" title="Backup herunterladen">Export</button>
+    <button class="btn btn--sm btn--ghost" data-act="import" title="Backup einlesen">Import</button>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="dashboard" aria-selected="true">Dashboard</button>
+    <button class="tab" role="tab" data-view="batteries" aria-selected="false">Akkus</button>
+    <button class="tab" role="tab" data-view="flights" aria-selected="false">Flüge</button>
+    <button class="tab" role="tab" data-view="training" aria-selected="false">Training</button>
+    <button class="tab" role="tab" data-view="checklists" aria-selected="false">Checklisten</button>
+    <button class="tab" role="tab" data-view="links" aria-selected="false">Links</button>
+  </nav>
+</header>
+
+<main class="shell">
+  <section id="view-dashboard" class="view is-active"></section>
+  <section id="view-batteries" class="view"></section>
+  <section id="view-flights" class="view"></section>
+  <section id="view-training" class="view"></section>
+  <section id="view-checklists" class="view"></section>
+  <section id="view-links" class="view"></section>
+
+  <footer class="footer">
+    <p style="margin-bottom:8px">
+      Alle Eingaben liegen ausschliesslich im Speicher dieses Browsers. Sie werden nirgendwohin
+      übertragen und sind auf anderen Geräten nicht sichtbar. Browserdaten löschen heisst Daten weg,
+      deshalb regelmässig exportieren.
+    </p>
+    <p style="margin-bottom:8px">
+      Dieses Werkzeug ersetzt weder die Drohnenkarte noch dein Fernpilotenzeugnis. Massgeblich sind
+      die Angaben des BAZL am Flugtag.
+    </p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn--sm" data-act="export">Backup exportieren</button>
+      <button class="btn btn--sm" data-act="import">Backup importieren</button>
+      <button class="btn btn--sm btn--danger" data-act="wipe">Alles zurücksetzen</button>
+    </div>
+  </footer>
+</main>
+
+<input type="file" id="file" accept="application/json,.json" hidden>
+
+<dialog id="dlg">
+  <div class="dlg__form">
+    <div class="dlg__head">
+      <h2 id="dlg-title" style="flex:1"></h2>
+      <button class="btn btn--sm" data-act="dlg-close" aria-label="Schliessen">✕</button>
+    </div>
+    <div class="dlg__body" id="dlg-body"></div>
+    <div class="dlg__foot" id="dlg-foot"></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="./assets/vendor/leaflet/leaflet.js"></script>
+<script src="./assets/js/data.js"></script>
+<script src="./assets/js/map.js"></script>
+<script src="./assets/js/weather.js"></script>
+<script src="./assets/js/app.js"></script>
+</body>
+</html>
