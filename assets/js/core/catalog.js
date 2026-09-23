@@ -87,6 +87,10 @@ export const SEED_PARTS = [
     source: SHOP,
   }),
 
+  part("cat-seeker3-arm-front", 14, "Rahmen", "DeepSpace Seeker 3 Ersatzarm vorne", "T700-Carbon", "", {
+    source: "Konfigurator " + SHOP + ", Preis offen",
+    note: "Preis und Link im Shop nachtragen.",
+  }),
   part("cat-tx16s-mk3-max", 10, "Funke", "RadioMaster TX16S Mk3 MAX (ELRS), Gold", "Artikel 191002", 319, {
     stockBase: 1,
     droneIds: [],

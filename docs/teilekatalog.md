@@ -50,6 +50,7 @@ Messwert für den Seeker 3.
 
 | Teil | Preis | Quelle |
 |---|---|---|
+| DeepSpace Seeker 3 Ersatzarm vorne | offen | fpvracing.ch |
 | DeepSpace Seeker 3 Ersatzarm hinten | offen | fpvracing.ch |
 
 ### Flugakkus (Konfigurator fpvracing.ch, alle 4S mit XT30, passend zum Seeker 3)
@@ -109,5 +110,5 @@ Alle Preise Stand 23.09.2026, Quelle: Konfigurator auf der Seeker-3-Seite von fp
 
 - Genaue ELRS-Empfängerversion und Antenne
 - Props: Preis pro Satz, Stückzahl pro Satz
-- Schraubensatz, Ersatzarm vorne, Kameraschutz
+- Schraubensatz, Kameraschutz; Preise der Ersatzarme
 - Motor einzeln als Ersatzteil

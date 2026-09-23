@@ -325,7 +325,9 @@ import { createMedia } from "./views/media.js";
         "<p style=\"font-size:.8rem;color:var(--muted);margin:0 0 11px\">Standort ermitteln, Einschränkungszonen anzeigen und das aktuelle Wetter dazu holen. " +
         "Dabei gehen deine Koordinaten an den Wetterdienst Open-Meteo. Das ist der einzige Vorgang in dieser App, bei dem Daten dein Gerät verlassen, " +
         "deshalb passiert er nur auf Knopfdruck.</p>" +
-        '<button class="btn btn--primary" data-act="pf-go">Standort und Wetter prüfen</button>';
+        // Ohne Standort gibt es keinen Wetterteil, der Fehler muss also hier stehen.
+        (preflight.error ? '<div class="banner" style="margin:0 0 11px">' + h(preflight.error) + "</div>" : "") +
+        '<button class="btn btn--primary" data-act="pf-go">' + (preflight.error ? "Nochmals versuchen" : "Standort und Wetter prüfen") + "</button>";
     } else {
       out += '<div class="map map--sm" id="dash-map" style="margin-bottom:12px"></div>';
       out += weatherHtml();
@@ -409,31 +411,52 @@ import { createMedia } from "./views/media.js";
     preflight.error = null;
     renderPreflight();
 
-    navigator.geolocation.getCurrentPosition(
-      function (p) {
-        preflight.lat = p.coords.latitude;
-        preflight.lon = p.coords.longitude;
-        preflight.busy = "Wetter wird geladen…";
-        renderPreflight();
+    function found(p) {
+      preflight.lat = p.coords.latitude;
+      preflight.lon = p.coords.longitude;
+      preflight.busy = "Wetter wird geladen…";
+      renderPreflight();
 
-        FPVWeather.fetchAt(preflight.lat, preflight.lon)
-          .then(function (w) {
-            preflight.wx = w;
-            preflight.error = null;
-          })
-          .catch(function (e) {
-            preflight.wx = null;
-            preflight.error = e && e.message ? e.message : "unbekannter Fehler";
-          })
-          .then(function () {
-            preflight.busy = "";
-            renderPreflight();
+      FPVWeather.fetchAt(preflight.lat, preflight.lon)
+        .then(function (w) {
+          preflight.wx = w;
+          preflight.error = null;
+        })
+        .catch(function (e) {
+          preflight.wx = null;
+          preflight.error = e && e.message ? e.message : "unbekannter Fehler";
+        })
+        .then(function () {
+          preflight.busy = "";
+          renderPreflight();
+        });
+    }
+
+    function failed(e) {
+      preflight.busy = "";
+      preflight.error =
+        e && e.code === 1
+          ? "Standortfreigabe verweigert. In den Android-Einstellungen unter Apps → FPV OPS → Berechtigungen den Standort erlauben."
+          : e && e.code === 3
+          ? "Standort nicht rechtzeitig gefunden. Unter freiem Himmel nochmals versuchen."
+          : "Standort nicht verfügbar. Ist der Standort am Gerät eingeschaltet?";
+      renderPreflight();
+    }
+
+    // Erst genau (GPS). Braucht ein kaltes GPS zu lange, reicht für Zonen und
+    // Wetter auch die schnellere Ortung über Netz.
+    navigator.geolocation.getCurrentPosition(
+      found,
+      function (e) {
+        if (e && e.code === 3) {
+          preflight.busy = "GPS braucht lange, versuche ungefähre Ortung…";
+          renderPreflight();
+          navigator.geolocation.getCurrentPosition(found, failed, {
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 600000,
           });
-      },
-      function () {
-        preflight.busy = "";
-        preflight.error = "Standortfreigabe verweigert oder nicht verfügbar";
-        renderPreflight();
+        } else failed(e);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
