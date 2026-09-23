@@ -182,6 +182,7 @@ assets/js/views/workshop.js   Reiter Werkstatt: Drohnen, Wartungsplan, Logbuch, 
                               Teilelager, Bestellliste
 assets/js/views/content.js    Eigene und angepasste Manöver, Checklisten und Links
 assets/js/views/sync.js       Abgleich per WLAN: QR-Code am Laptop, Scanner am Handy
+assets/js/views/media.js      Reiter Aufnahmen: Karte einlesen, Flug zuordnen, GPS-Prüfung, Schnitt-Links
 assets/vendor/leaflet/        Leaflet 1.9.4, lokal eingebunden (BSD-2, siehe LICENSE)
 assets/vendor/qrcode/         qrcode-generator 2.0.4 (MIT, Hinweis in der Datei)
 assets/vendor/jsqr/           jsQR 1.4.0 (Apache-2.0, siehe LICENSE)
@@ -203,7 +204,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v8"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v9"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---

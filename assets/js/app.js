@@ -11,6 +11,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
 import { createWorkshop } from "./views/workshop.js";
 import { createContent } from "./views/content.js";
 import { createSync } from "./views/sync.js";
+import { createMedia } from "./views/media.js";
 
 (function () {
   "use strict";
@@ -52,6 +53,17 @@ import { createSync } from "./views/sync.js";
     openDialog: (t, b, f) => openDialog(t, b, f),
     closeDialog: () => closeDialog(),
     toast: (m) => toast(m),
+  });
+
+  const media = createMedia({
+    state: () => state,
+    save: save,
+    openDialog: (t, b, f) => openDialog(t, b, f),
+    closeDialog: () => closeDialog(),
+    toast: (m) => toast(m),
+    rerender: () => renderAll(),
+    activeDrone: () => workshop.activeDrone(),
+    flightDrone: (f) => workshop.flightDrone(f),
   });
 
   function toast(msg) {
@@ -543,7 +555,8 @@ import { createSync } from "./views/sync.js";
           (f.maxSpeed ? " · " + h(f.maxSpeed) + " km/h" : "") +
           (f.maxAlt ? " · " + h(f.maxAlt) + " m" : "") +
           (bats ? " · " + h(bats) : "") +
-          (f.weather ? " · " + h(f.weather) : "") + "</div>" +
+          (f.weather ? " · " + h(f.weather) : "") +
+          (media.flightSummary(f.id) ? " · " + h(media.flightSummary(f.id)) : "") + "</div>" +
           (f.notes ? '<div class="row__meta">' + h(f.notes) + "</div>" : "") +
           (f.crash && f.repair
             ? '<div class="row__meta" style="color:var(--warn)">Reparatur: ' + h(f.repair) + "</div>"
@@ -1296,7 +1309,7 @@ import { createSync } from "./views/sync.js";
 
   /* -------------------------------------------------------------- Views */
 
-  const VIEWS = ["dashboard", "batteries", "workshop", "flights", "training", "checklists", "links"];
+  const VIEWS = ["dashboard", "batteries", "workshop", "flights", "media", "training", "checklists", "links"];
 
   function showView(name) {
     if (VIEWS.indexOf(name) === -1) name = "dashboard";
@@ -1315,6 +1328,7 @@ import { createSync } from "./views/sync.js";
     const d = workshop.activeDrone();
     $(".brand__sub").textContent = (d ? d.name : "Keine Drohne") + " · A1/A3";
     workshop.render();
+    media.render();
     renderDashboard();
     renderBatteries();
     renderFlights();
@@ -1345,6 +1359,7 @@ import { createSync } from "./views/sync.js";
     if (act.indexOf("ws-") === 0 && workshop.click(act, el)) return;
     if (act.indexOf("ct-") === 0 && content.click(act, el)) return;
     if (act.indexOf("sync-") === 0 && sync.click(act, el)) return;
+    if (act.indexOf("md-") === 0 && media.click(act, el)) return;
 
     switch (act) {
       case "dlg-close":
@@ -1456,6 +1471,7 @@ import { createSync } from "./views/sync.js";
 
   document.addEventListener("change", function (ev) {
     if (workshop.change(ev)) return;
+    if (media.change(ev)) return;
     if (ev.target.id === "f-crash") {
       $("#f-crashbox").hidden = !ev.target.checked;
       return;
