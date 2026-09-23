@@ -14,7 +14,7 @@
    ========================================================================== */
 
 import { uid, today } from "./util.js";
-import { SEED_DRONES, SEED_PARTS } from "./catalog.js";
+import { SEED_DRONES, SEED_PARTS, SEED_TASKS } from "./catalog.js";
 
 const DB_NAME = "fpv-ops";
 const LEGACY_KEY = "fpv-ops-v1";
@@ -22,8 +22,13 @@ const FALLBACK_KEY = "fpv-ops-v2";
 export const FORMAT = "fpv-ops";
 export const FORMAT_VERSION = 2;
 
-const LISTS = ["batteries", "flights", "spots", "cycleLog", "drones", "parts", "stockLog"];
-const MAPS = ["training", "checks"];
+const LISTS = [
+  "batteries", "flights", "spots", "cycleLog",
+  "drones", "parts", "stockLog", "maintenance", "maintTasks", "bfConfigs",
+  "mvCustom", "clCustom", "linkCustom",
+];
+// Anpassungen an eingebauten Inhalten, nach deren ID abgelegt.
+const MAPS = ["training", "checks", "mvEdit", "clEdit", "linkHidden"];
 
 /* ------------------------------------------------------------ Zustand */
 
@@ -51,8 +56,17 @@ export function blankState() {
     drones: [],
     parts: [],
     stockLog: [],
+    maintenance: [],
+    maintTasks: [],
+    bfConfigs: [],
+    mvCustom: [],
+    clCustom: [],
+    linkCustom: [],
     training: {},
     checks: {},
+    mvEdit: {},
+    clEdit: {},
+    linkHidden: {},
     settings: { lifespan: 200 },
   };
 }
@@ -71,12 +85,21 @@ export function autoCycles(state, batteryId) {
   return n;
 }
 
-// Lagerbestand genauso: Grundwert aus dem Teile-Dialog + alle Zu- und Abgänge.
+// Lagerbestand genauso: Grundwert aus dem Teile-Dialog + alle Zu- und Abgänge,
+// minus was bei Flügen (Crash) und Wartungen als verbraucht eingetragen ist.
 export function stockMoves(state, partId) {
   let n = 0;
   state.stockLog.forEach((m) => {
     if (m.partId === partId) n += Number(m.delta) || 0;
   });
+  const used = (list) =>
+    list.forEach((x) =>
+      (x.partsUsed || []).forEach((u) => {
+        if (u.partId === partId) n -= Number(u.qty) || 0;
+      })
+    );
+  used(state.flights);
+  used(state.maintenance);
   return n;
 }
 
@@ -123,8 +146,9 @@ function flatten(state) {
 }
 
 function unflatten(records) {
-  const s = { training: {}, checks: {}, settings: {} };
+  const s = { settings: {} };
   LISTS.forEach((c) => (s[c] = []));
+  MAPS.forEach((c) => (s[c] = {}));
   records.forEach((r) => {
     if (r.d || !r.data) return;
     if (LISTS.indexOf(r.c) !== -1) s[r.c].push(clone(r.data));
@@ -153,13 +177,13 @@ export function fromLegacy(p) {
     flights: Array.isArray(p.flights) ? p.flights : [],
     spots: Array.isArray(p.spots) ? p.spots : [],
     cycleLog: [],
-    drones: [],
-    parts: [],
-    stockLog: [],
     training: p.training && typeof p.training === "object" ? p.training : {},
     checks: p.checks && typeof p.checks === "object" ? p.checks : {},
     settings: Object.assign({ lifespan: 200 }, p.settings || {}),
   };
+  const blank = blankState();
+  LISTS.forEach((c) => (s[c] = s[c] || blank[c]));
+  MAPS.forEach((c) => (s[c] = s[c] || blank[c]));
   s.batteries = s.batteries.map((x) => {
     const o = Object.assign({}, x);
     if (o.cyclesBase == null) {
@@ -390,6 +414,7 @@ function seedCatalog() {
   };
   SEED_DRONES.forEach((d) => add("drones", d));
   SEED_PARTS.forEach((p) => add("parts", p));
+  SEED_TASKS.forEach((t) => add("maintTasks", t));
   list.forEach(remember);
   return list;
 }

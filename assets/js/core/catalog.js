@@ -107,3 +107,36 @@ export const SEED_PARTS = [
     source: "Eigene Angabe, Listenpreis " + SHOP,
   }),
 ];
+
+// Wartungsplan-Vorschläge. Die Intervalle sind Faustregeln für einen 3-Zöller im
+// Freestyle, keine Herstellerangaben, und in der App anpassbar.
+export const SEED_TASKS = [
+  {
+    id: "task-seeker3-screws",
+    _order: 1,
+    droneId: "default-drone-1",
+    title: "Schrauben, Arme und Kamerahalter prüfen",
+    everyFlights: 10,
+    everyDays: 0,
+    lastDate: "",
+  },
+  {
+    id: "task-seeker3-motors",
+    _order: 2,
+    droneId: "default-drone-1",
+    title: "Motoren: Lagerspiel, Geräusch, Wärme nach dem Flug",
+    everyFlights: 25,
+    everyDays: 0,
+    lastDate: "",
+  },
+  {
+    id: "task-seeker3-config",
+    _order: 3,
+    droneId: "default-drone-1",
+    title: "Betaflight-Konfiguration sichern (diff all)",
+    kind: "config",
+    everyFlights: 0,
+    everyDays: 90,
+    lastDate: "",
+  },
+];

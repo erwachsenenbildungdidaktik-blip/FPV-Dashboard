@@ -49,7 +49,8 @@ von A in B einlesen, dann Code von B in A.
 
 Akkuzyklen werden dafür nicht mehr als Zahl gespeichert, sondern gezählt: der im Akku-Dialog
 eingetragene Grundwert, plus jeder Flug mit diesem Akku, plus jeder einzeln gebuchte Zyklus.
-Der Lagerbestand in der Werkstatt genauso: Grundwert plus alle Zu- und Abgänge (+/−, "Gekauft").
+Der Lagerbestand in der Werkstatt genauso: Grundwert plus alle Zu- und Abgänge (+/−, "Gekauft"),
+minus die Teile, die bei Crash-Flügen oder im Logbuch als verbraucht eingetragen sind.
 
 Beim ersten Start nach dem Update übernimmt die App den bisherigen Stand aus `localStorage`
 automatisch. Der alte Eintrag bleibt dort als Sicherheitskopie liegen. Alte Backup-Dateien und
@@ -128,7 +129,9 @@ assets/js/core/store.js       Datenbank, Datensätze mit Zeitstempel, Zusammenf�
 assets/js/core/backup.js      Backup-Code kodieren und dekodieren
 assets/js/core/util.js        Kleine Hilfen
 assets/js/core/catalog.js     Startkatalog der Werkstatt: Drohne, Teile, Preise mit Stand-Datum
-assets/js/views/workshop.js   Reiter Werkstatt: Drohnen, Teilelager, Bestellliste
+assets/js/views/workshop.js   Reiter Werkstatt: Drohnen, Wartungsplan, Logbuch, Betaflight-Stände,
+                              Teilelager, Bestellliste
+assets/js/views/content.js    Eigene und angepasste Manöver, Checklisten und Links
 assets/vendor/leaflet/        Leaflet 1.9.4, lokal eingebunden (BSD-2, siehe LICENSE)
 assets/icons/                 App-Icons
 ```
@@ -138,11 +141,13 @@ assets/icons/                 App-Icons
 - **Startkatalog der Werkstatt** (Teile, Preise, Startdrohne) steht in `assets/js/core/catalog.js`,
   die Herkunft der Angaben in `docs/teilekatalog.md`. Neue Einträge brauchen eine neue, feste ID;
   bestehende IDs nie umbenennen, sonst taucht das Teil doppelt auf.
-- **Trainingsmanöver, Checklisten, Links, Akku-Startbestand** stehen in `assets/js/data.js`.
-  Das ist reiner Text, dort kannst du gefahrlos ergänzen und umformulieren.
+- **Trainingsmanöver, Checklisten, Links, Akku-Startbestand** stehen als Vorlage in
+  `assets/js/data.js`. In der App lassen sie sich anpassen, ausblenden und ergänzen; diese
+  Anpassungen liegen in den eigenen Daten und überleben jede neue Fassung der Vorlage. IDs in
+  `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v5"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v6"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---

@@ -9,6 +9,7 @@ import { $, $$, uid, h, today, deDate, daysSince, fmtMin } from "./core/util.js"
 import * as store from "./core/store.js";
 import { encodeBackup, decodeBackup } from "./core/backup.js";
 import { createWorkshop } from "./views/workshop.js";
+import { createContent } from "./views/content.js";
 
 (function () {
   "use strict";
@@ -35,6 +36,15 @@ import { createWorkshop } from "./views/workshop.js";
     rerender: () => renderAll(),
   });
 
+  const content = createContent({
+    state: () => state,
+    save: save,
+    openDialog: (t, b, f) => openDialog(t, b, f),
+    closeDialog: () => closeDialog(),
+    toast: (m) => toast(m),
+    rerender: () => renderAll(),
+  });
+
   function toast(msg) {
     const t = $("#toast");
     t.textContent = msg;
@@ -46,7 +56,7 @@ import { createWorkshop } from "./views/workshop.js";
   /* ------------------------------------------------------- Berechnungen */
 
   function allManeuvers() {
-    return TRAINING.reduce((a, l) => a.concat(l.maneuvers), []);
+    return content.allManeuvers();
   }
 
   function mvState(id) {
@@ -195,6 +205,14 @@ import { createWorkshop } from "./views/workshop.js";
         " Tagen voll geladen. LiPo auf Lagerspannung bringen, sonst altern die Zellen schneller.</div>";
     }
 
+    const due = workshop.dueTasks();
+    if (due.length) {
+      out +=
+        '<div class="banner"><strong>Wartung fällig:</strong> ' +
+        due.map((x) => h(x.drone.name) + ": " + h(x.t.title)).join("; ") +
+        ' <button class="btn btn--sm" data-goto="workshop" style="margin-left:6px">Zur Werkstatt</button></div>';
+    }
+
     out += '<div id="preflight"></div>';
 
     out +=
@@ -216,9 +234,9 @@ import { createWorkshop } from "./views/workshop.js";
     out +=
       '<div class="section-head"><span class="label label--accent">Trainingsfortschritt</span><span class="section-head__rule"></span></div>' +
       '<div class="card">';
-    TRAINING.forEach((l) => {
+    content.levels().forEach((l) => {
       const st = levelStats(l);
-      const pct = Math.round((st.done / st.total) * 100);
+      const pct = st.total ? Math.round((st.done / st.total) * 100) : 0;
       out +=
         '<div style="margin-bottom:13px">' +
         '<div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px">' +
@@ -587,8 +605,9 @@ import { createWorkshop } from "./views/workshop.js";
   let activeLevel = 0;
 
   function renderTraining() {
+    const LV = content.levels();
     let out = '<div class="levels" role="tablist">';
-    TRAINING.forEach((l, i) => {
+    LV.forEach((l, i) => {
       const st = levelStats(l);
       out +=
         '<button class="level-tab" role="tab" data-level="' + i + '" aria-selected="' +
@@ -599,7 +618,7 @@ import { createWorkshop } from "./views/workshop.js";
     });
     out += "</div>";
 
-    const lv = TRAINING[activeLevel];
+    const lv = LV[activeLevel] || LV[0];
     out +=
       '<div class="card" style="margin:14px 0"><div class="label label--accent" style="margin-bottom:6px">Stufe ' +
       lv.n + "</div><p style=\"font-size:.82rem;color:var(--muted);margin:0\">" + h(lv.intro) + "</p></div>";
@@ -618,6 +637,9 @@ import { createWorkshop } from "./views/workshop.js";
         '<div class="mv__head"><div><div class="mv__title">' + h(m.title) + "</div>" +
         '<div class="mv__tag">' + h(m.tag) + "</div></div>" + chip + "</div>" +
         '<div class="mv__desc">' + h(m.desc) + "</div>" +
+        (m.custom || m.edited
+          ? '<div class="mv__tag" style="margin-top:6px">' + (m.custom ? "Eigenes Manöver" : "Angepasst") + "</div>"
+          : "") +
         (ms.log && ms.log.length
           ? '<div class="mv__tag" style="margin-top:8px">' + ms.log.length +
             (ms.log.length === 1 ? " Lernschritt" : " Lernschritte") +
@@ -626,6 +648,28 @@ import { createWorkshop } from "./views/workshop.js";
         "</button>";
     });
     out += "</div>";
+
+    const hid = content.hiddenManeuvers(lv.id);
+    out +=
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">' +
+      '<button class="btn btn--sm" data-act="ct-mv-new" data-lv="' + h(lv.id) + '">Eigenes Manöver in Stufe ' + lv.n + "</button>" +
+      (hid.length
+        ? '<button class="btn btn--sm btn--ghost" data-act="ct-hidden-toggle" data-key="mv-' + h(lv.id) + '">' +
+          hid.length + " ausgeblendet</button>"
+        : "") +
+      "</div>";
+    if (hid.length && content.showHidden("mv-" + lv.id)) {
+      out +=
+        '<div class="card card--flush" style="margin-top:10px">' +
+        hid
+          .map(
+            (m) =>
+              '<div class="row"><div class="row__main"><div class="row__title">' + h(m.title) + "</div></div>" +
+              '<div class="row__actions"><button class="btn btn--sm" data-act="ct-mv-show" data-id="' + m.id + '">Einblenden</button></div></div>'
+          )
+          .join("") +
+        "</div>";
+    }
 
     $("#view-training").innerHTML = out;
   }
@@ -638,15 +682,16 @@ import { createWorkshop } from "./views/workshop.js";
       "Die Haken bleiben gespeichert, bis du die Liste zurücksetzt. Praktisch, wenn du zwischen Vorbereitung und Abfahrt unterbrochen wirst." +
       "</p></div>";
 
-    CHECKLISTS.forEach((cl) => {
+    content.checklists().forEach((cl) => {
       const st = state.checks[cl.id] || {};
       const done = cl.items.filter((_, i) => st[i]).length;
-      const pct = Math.round((done / cl.items.length) * 100);
+      const pct = cl.items.length ? Math.round((done / cl.items.length) * 100) : 0;
       out +=
         '<div class="section-head"><span class="label label--accent">' + h(cl.title) + "</span>" +
         '<span class="section-head__rule"></span>' +
         '<span class="label mono" data-count="' + cl.id + '">' + done + " / " + cl.items.length + "</span>" +
-        '<button class="btn btn--sm" data-act="cl-reset" data-id="' + cl.id + '">Zurücksetzen</button></div>';
+        '<button class="btn btn--sm" data-act="cl-reset" data-id="' + cl.id + '">Zurücksetzen</button>' +
+        '<button class="btn btn--sm btn--ghost" data-act="ct-cl-edit" data-id="' + cl.id + '">Bearbeiten</button></div>';
       out += '<div class="bar" style="margin-bottom:9px"><div class="bar__fill' +
         (pct === 100 ? " bar__fill--ok" : "") + '" data-barfill="' + cl.id +
         '" style="width:' + pct + '%"></div></div>';
@@ -663,17 +708,26 @@ import { createWorkshop } from "./views/workshop.js";
       out += "</div>";
     });
 
+    const hid = content.hiddenChecklists();
+    out +=
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:16px">' +
+      '<button class="btn btn--sm" data-act="ct-cl-new">Eigene Checkliste</button>' +
+      hid
+        .map((c) => '<button class="btn btn--sm btn--ghost" data-act="ct-cl-show" data-id="' + c.id + '">„' + h(c.title) + "“ einblenden</button>")
+        .join("") +
+      "</div>";
+
     $("#view-checklists").innerHTML = out;
   }
 
   /* Nur Zähler und Balken nachführen. Die Liste neu zu zeichnen würde den
      Haken unter dem Finger wegziehen und die Scrollposition verlieren. */
   function updateChecklistProgress(id) {
-    const cl = CHECKLISTS.find((c) => c.id === id);
+    const cl = content.checklist(id);
     if (!cl) return;
     const st = state.checks[id] || {};
     const done = cl.items.filter((_, i) => st[i]).length;
-    const pct = Math.round((done / cl.items.length) * 100);
+    const pct = cl.items.length ? Math.round((done / cl.items.length) * 100) : 0;
     const c = $('[data-count="' + id + '"]');
     const b = $('[data-barfill="' + id + '"]');
     if (c) c.textContent = done + " / " + cl.items.length;
@@ -685,15 +739,47 @@ import { createWorkshop } from "./views/workshop.js";
 
   /* ------------------------------------------------------------- Links */
 
+  function editableLinkCard(l) {
+    return (
+      '<div class="linkcard" style="cursor:default">' +
+      '<div class="linkcard__title">' + h(l.title) + "</div>" +
+      '<div class="linkcard__desc" style="word-break:break-all">' + h(l.url) + "</div>" +
+      '<div style="display:flex;gap:6px;margin-top:9px">' +
+      (l.builtin
+        ? '<button class="btn btn--sm btn--danger" data-act="ct-link-hide" data-url="' + h(l.url) + '">Ausblenden</button>'
+        : '<button class="btn btn--sm" data-act="ct-link-edit" data-id="' + l.id + '">Bearbeiten</button>' +
+          '<button class="btn btn--sm btn--danger" data-act="ct-link-del" data-id="' + l.id + '">Löschen</button>') +
+      "</div></div>"
+    );
+  }
+
   function renderLinks() {
-    let out = "";
-    LINKS.forEach((g) => {
+    const edit = content.linkEditMode();
+    let out =
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">' +
+      (edit ? '<button class="btn btn--sm btn--primary" data-act="ct-link-new">Link hinzufügen</button>' : "") +
+      '<button class="btn btn--sm" data-act="ct-link-mode">' + (edit ? "Fertig" : "Links bearbeiten") + "</button></div>";
+    content.linkGroups().forEach((g) => {
       out +=
         '<div class="section-head"><span class="label label--accent">' + h(g.group) +
         '</span><span class="section-head__rule"></span></div><div class="grid grid--cards">';
-      g.items.forEach((l) => (out += linkCard(l)));
+      g.items.forEach((l) => (out += edit ? editableLinkCard(l) : linkCard(l)));
       out += "</div>";
     });
+    const hid = content.hiddenLinks();
+    if (edit && hid.length) {
+      out +=
+        '<div class="section-head"><span class="label">Ausgeblendet</span><span class="section-head__rule"></span></div>' +
+        '<div class="card card--flush">' +
+        hid
+          .map(
+            (l) =>
+              '<div class="row"><div class="row__main"><div class="row__title">' + h(l.title) + "</div></div>" +
+              '<div class="row__actions"><button class="btn btn--sm" data-act="ct-link-show" data-url="' + h(l.url) + '">Einblenden</button></div></div>'
+          )
+          .join("") +
+        "</div>";
+    }
 
     out +=
       '<div class="section-head"><span class="label label--accent">Meine Nachweise</span>' +
@@ -810,8 +896,14 @@ import { createWorkshop } from "./views/workshop.js";
     const f = id ? state.flights.find((x) => x.id === id) : null;
     const v = f || {
       date: today(), spotId: "", minutes: "", batteryIds: [],
-      maxSpeed: "", maxAlt: "", weather: "", crash: false, repair: "", notes: "",
+      maxSpeed: "", maxAlt: "", weather: "", crash: false, repair: "", notes: "", partsUsed: [],
     };
+    const droneId = f ? workshop.flightDrone(f) : (workshop.activeDrone() || {}).id || "";
+    const droneSel = state.drones.length > 1
+      ? '<label class="field"><span class="label">Drohne</span><select id="f-drone">' +
+        state.drones.map((d) => '<option value="' + d.id + '"' + (d.id === droneId ? " selected" : "") + ">" + h(d.name) + "</option>").join("") +
+        "</select></label>"
+      : "";
     const spotOpts =
       '<option value="">— Gebiet wählen —</option>' +
       state.spots.map((s) => '<option value="' + s.id + '"' + (v.spotId === s.id ? " selected" : "") + ">" + h(s.name) + "</option>").join("");
@@ -834,6 +926,7 @@ import { createWorkshop } from "./views/workshop.js";
         '<label class="field"><span class="label">Datum</span><input type="date" id="f-date" value="' + h(v.date) + '"></label>' +
         '<label class="field"><span class="label">Dauer in Minuten</span><input type="number" id="f-min" step="0.5" value="' + h(v.minutes) + '"></label>' +
         "</div>" +
+        droneSel +
         '<label class="field"><span class="label">Fluggebiet</span><select id="f-spot">' + spotOpts + "</select>" +
         '<small style="display:block;margin-top:5px">Neue Gebiete legst du im Reiter Flüge unten an.</small></label>' +
         '<div class="form-row">' +
@@ -848,8 +941,11 @@ import { createWorkshop } from "./views/workshop.js";
         '<label class="check" style="border:1px solid var(--line);border-radius:6px;margin-bottom:11px">' +
         '<input type="checkbox" id="f-crash"' + (v.crash ? " checked" : "") + '><span class="check__box"></span>' +
         '<span class="check__text">Crash oder Schaden</span></label>' +
-        '<label class="field"><span class="label">Reparatur / ersetzte Teile</span><input type="text" id="f-repair" value="' +
+        '<div id="f-crashbox"' + (v.crash ? "" : " hidden") + ">" +
+        '<label class="field"><span class="label">Reparatur / Schaden</span><input type="text" id="f-repair" value="' +
         h(v.repair) + '" placeholder="Arm vorne rechts, 2 Props"></label>' +
+        '<div class="label" style="margin:4px 0 7px">Verbrauchte Teile (werden vom Lager abgebucht)</div>' +
+        '<div id="f-parts">' + workshop.partsUsedHtml(v.partsUsed || [], droneId) + "</div></div>" +
         '<label class="field"><span class="label">Notizen</span><textarea id="f-fnotes" placeholder="Was lief, was nicht">' +
         h(v.notes) + "</textarea></label>",
       (f ? '<button type="button" class="btn btn--danger" data-act="flight-del" data-id="' + f.id + '">Löschen</button>' : "") +
@@ -868,11 +964,14 @@ import { createWorkshop } from "./views/workshop.js";
       maxAlt: Number($("#f-alt").value) || 0,
       weather: $("#f-weather").value.trim(),
       crash: $("#f-crash").checked,
-      repair: $("#f-repair").value.trim(),
+      repair: $("#f-crash").checked ? $("#f-repair").value.trim() : "",
+      partsUsed: $("#f-crash").checked ? workshop.readPartsUsed($("#f-parts")) : [],
       notes: $("#f-fnotes").value.trim(),
     };
 
-    // Zyklen zählt der Speicher aus den Flügen selbst, hier nur den Status setzen.
+    const dsel = $("#f-drone");
+    rec.droneId = dsel ? dsel.value : (workshop.activeDrone() || {}).id || "";
+    // Zyklen und Teileverbrauch zählt der Speicher aus den Flügen selbst.
     if (id) {
       Object.assign(state.flights.find((x) => x.id === id), rec);
     } else {
@@ -892,7 +991,8 @@ import { createWorkshop } from "./views/workshop.js";
     renderFlights();
     renderBatteries();
     renderDashboard();
-    toast("Flug gespeichert");
+    workshop.render();
+    toast(rec.partsUsed.length ? "Flug gespeichert, Teile abgebucht" : "Flug gespeichert");
   }
 
   /* ---- Fluggebiet ---- */
@@ -992,7 +1092,7 @@ import { createWorkshop } from "./views/workshop.js";
   /* ---- Manöver ---- */
 
   function maneuverDialog(id) {
-    const m = allManeuvers().find((x) => x.id === id);
+    const m = content.maneuver(id);
     if (!m) return;
     const ms = mvState(id);
     const logs = (ms.log || [])
@@ -1012,9 +1112,9 @@ import { createWorkshop } from "./views/workshop.js";
       '<div class="label label--accent" style="margin-bottom:9px">' + h(m.tag) + "</div>" +
         '<p style="font-size:.85rem">' + h(m.goal) + "</p>" +
         '<div class="label" style="margin:16px 0 7px">Ausführung</div>' +
-        '<ol class="steps">' + m.steps.map((s) => "<li>" + h(s) + "</li>").join("") + "</ol>" +
+        '<ol class="steps">' + (m.steps || []).map((s) => "<li>" + h(s) + "</li>").join("") + "</ol>" +
         '<div class="label" style="margin:16px 0 7px">Typische Fehler</div>' +
-        '<ul class="steps">' + m.errors.map((s) => "<li>" + h(s) + "</li>").join("") + "</ul>" +
+        '<ul class="steps">' + (m.errors || []).map((s) => "<li>" + h(s) + "</li>").join("") + "</ul>" +
         '<div class="card" style="margin:16px 0;border-color:var(--accent-line);background:var(--accent-soft)">' +
         '<div class="label label--accent" style="margin-bottom:5px">Erfolgskriterium</div>' +
         '<div style="font-size:.83rem">' + h(m.success) + "</div></div>" +
@@ -1031,7 +1131,8 @@ import { createWorkshop } from "./views/workshop.js";
         '<label class="field"><span class="label">Was ist gelungen</span><textarea id="m-ok" placeholder="Konkret: was hat funktioniert und woran hast du es gemerkt"></textarea></label>' +
         '<label class="field"><span class="label">Wo war die Schwierigkeit</span><textarea id="m-issue" placeholder="Konkret: an welcher Stelle, mit welcher Folge"></textarea></label>' +
         (logs ? '<div class="label" style="margin:16px 0 9px">Verlauf</div>' + logs : ""),
-      '<button type="button" class="btn btn--primary" data-act="mv-save" data-id="' + m.id + '">Speichern</button>'
+      '<button type="button" class="btn" data-act="ct-mv-edit" data-id="' + m.id + '">Inhalt bearbeiten</button>' +
+        '<button type="button" class="btn btn--primary" data-act="mv-save" data-id="' + m.id + '">Speichern</button>'
     );
   }
 
@@ -1232,6 +1333,7 @@ import { createWorkshop } from "./views/workshop.js";
     const act = el.dataset.act;
     const id = el.dataset.id;
     if (act.indexOf("ws-") === 0 && workshop.click(act, el)) return;
+    if (act.indexOf("ct-") === 0 && content.click(act, el)) return;
 
     switch (act) {
       case "dlg-close":
@@ -1273,6 +1375,7 @@ import { createWorkshop } from "./views/workshop.js";
         if (window.confirm("Diesen Flug löschen?")) {
           state.flights = state.flights.filter((x) => x.id !== id);
           save();
+          workshop.render();
           closeDialog();
           renderFlights();
           renderBatteries();
@@ -1342,6 +1445,10 @@ import { createWorkshop } from "./views/workshop.js";
 
   document.addEventListener("change", function (ev) {
     if (workshop.change(ev)) return;
+    if (ev.target.id === "f-crash") {
+      $("#f-crashbox").hidden = !ev.target.checked;
+      return;
+    }
     const el = ev.target.closest("[data-act]");
     if (el && el.dataset.act === "bat-status") {
       const b = state.batteries.find((x) => x.id === el.dataset.id);
