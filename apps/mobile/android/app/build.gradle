@@ -1,0 +1,67 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "ch.fpvops.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "ch.fpvops.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Die Bau-Pipeline zählt die Version hoch, damit Android Updates annimmt.
+        versionCode (project.findProperty("fpvVersionCode") ?: "1").toInteger()
+        versionName (project.findProperty("fpvVersionName") ?: "1.0").toString()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Signatur für selbst installierte Builds. Der Schlüssel liegt bewusst im Repo,
+    // damit jede neue APK sich über die alte installieren lässt (gleiche Signatur,
+    // Daten bleiben). Für den Play Store braucht es einen eigenen, geheimen Schlüssel.
+    signingConfigs {
+        sideload {
+            storeFile file("fpv-ops-sideload.jks")
+            storePassword "fpv-ops-sideload"
+            keyAlias "fpv-ops"
+            keyPassword "fpv-ops-sideload"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.sideload
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

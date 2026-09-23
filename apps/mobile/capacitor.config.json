@@ -1,0 +1,13 @@
+{
+  "appId": "ch.fpvops.app",
+  "appName": "FPV OPS",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#08090b"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "fpv-ops-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FPV OPS als Android-App (Capacitor), mit Abgleich per WLAN",
+  "license": "UNLICENSED",
+  "scripts": {
+    "web": "node ../../tools/build-web.mjs apps/mobile/www",
+    "sync": "npm run web && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}
