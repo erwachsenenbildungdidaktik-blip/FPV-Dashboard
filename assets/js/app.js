@@ -8,6 +8,7 @@
 import { $, $$, uid, h, today, deDate, daysSince, fmtMin } from "./core/util.js";
 import * as store from "./core/store.js";
 import { encodeBackup, decodeBackup } from "./core/backup.js";
+import { createWorkshop } from "./views/workshop.js";
 
 (function () {
   "use strict";
@@ -24,6 +25,15 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
     });
     return true;
   }
+
+  const workshop = createWorkshop({
+    state: () => state,
+    save: save,
+    openDialog: (t, b, f) => openDialog(t, b, f),
+    closeDialog: () => closeDialog(),
+    toast: (m) => toast(m),
+    rerender: () => renderAll(),
+  });
 
   function toast(msg) {
     const t = $("#toast");
@@ -98,7 +108,8 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
   // Startgewicht = gewogene Drohne ohne Akku + Akku. Beides trägst du selbst ein,
   // Herstellerangaben dazu sind oft ungenau.
   function takeoffWeight(b) {
-    const dry = Number(state.settings.droneWeight) || 0;
+    const d = workshop.activeDrone();
+    const dry = Number(d && d.weightDry) || 0;
     const pack = Number(b.weight) || 0;
     if (!dry || !pack) return null;
     return dry + pack;
@@ -423,9 +434,9 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
       '<small style="display:block;margin-top:6px">Richtwert für High-C-Packs im Freestyle. Der Balken pro Akku rechnet gegen diesen Wert. Das ist eine Faustregel, kein Messwert.</small>' +
       "</label>" +
       '<label class="field" style="margin:14px 0 0">' +
-      '<span class="label">Drohne gewogen, ohne Akku (g)</span>' +
+      '<span class="label">' + h(workshop.activeDrone() ? workshop.activeDrone().name + " gewogen" : "Drohne gewogen") + ', ohne Akku (g)</span>' +
       '<input type="number" min="0" max="2000" step="1" id="drone-weight" inputmode="numeric" placeholder="z. B. 175" value="' +
-      h(state.settings.droneWeight || "") + '">' +
+      h((workshop.activeDrone() && workshop.activeDrone().weightDry) || "") + '"' + (workshop.activeDrone() ? "" : " disabled") + ">" +
       '<small style="display:block;margin-top:6px">Startklar mit Props, GPS und Kamera, nur ohne Akku, auf die Waage. Zusammen mit dem Akkugewicht ergibt das das Startgewicht pro Akku. Welche Regeln ab 250 g gelten, steht beim BAZL.</small>' +
       "</label></div>";
 
@@ -809,7 +820,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
       ? state.batteries
           .map(
             (b) =>
-              '<label class="check" style="padding:8px 0;border:0"><input type="checkbox" class="f-bat" value="' +
+              '<label class="check check--pick" style="padding:8px 0;border:0"><input type="checkbox" class="f-bat" value="' +
               b.id + '"' + ((v.batteryIds || []).indexOf(b.id) > -1 ? " checked" : "") + ">" +
               '<span class="check__box"></span><span class="check__text">' + h(b.label) +
               '<span class="check__hint">' + (b.cycles || 0) + " Zyklen</span></span></label>"
@@ -1174,7 +1185,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
 
   /* -------------------------------------------------------------- Views */
 
-  const VIEWS = ["dashboard", "batteries", "flights", "training", "checklists", "links"];
+  const VIEWS = ["dashboard", "batteries", "workshop", "flights", "training", "checklists", "links"];
 
   function showView(name) {
     if (VIEWS.indexOf(name) === -1) name = "dashboard";
@@ -1190,6 +1201,9 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
   }
 
   function renderAll() {
+    const d = workshop.activeDrone();
+    $(".brand__sub").textContent = (d ? d.name : "Keine Drohne") + " · A1/A3";
+    workshop.render();
     renderDashboard();
     renderBatteries();
     renderFlights();
@@ -1217,6 +1231,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
     if (!el) return;
     const act = el.dataset.act;
     const id = el.dataset.id;
+    if (act.indexOf("ws-") === 0 && workshop.click(act, el)) return;
 
     switch (act) {
       case "dlg-close":
@@ -1326,6 +1341,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
   });
 
   document.addEventListener("change", function (ev) {
+    if (workshop.change(ev)) return;
     const el = ev.target.closest("[data-act]");
     if (el && el.dataset.act === "bat-status") {
       const b = state.batteries.find((x) => x.id === el.dataset.id);
@@ -1347,9 +1363,13 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
       return;
     }
     if (ev.target.id === "drone-weight") {
-      state.settings.droneWeight = Math.max(0, Math.round(Number(ev.target.value) || 0)) || "";
-      save();
-      renderBatteries();
+      const d = workshop.activeDrone();
+      if (d) {
+        d.weightDry = Math.max(0, Math.round(Number(ev.target.value) || 0)) || "";
+        save();
+        renderBatteries();
+        workshop.render();
+      }
       return;
     }
     if (ev.target.id === "lifespan") {
@@ -1374,6 +1394,13 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
     .open()
     .then(function (s0) {
       state = s0;
+      // Das Drohnengewicht stand kurz in den Einstellungen, jetzt gehört es zur Drohne.
+      if (state.settings.droneWeight) {
+        const d = workshop.activeDrone();
+        if (d && !d.weightDry) d.weightDry = state.settings.droneWeight;
+        delete state.settings.droneWeight;
+        save();
+      }
       renderAll();
 
       let startTab = "dashboard";

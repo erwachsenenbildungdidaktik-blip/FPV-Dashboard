@@ -19,9 +19,10 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
 
 | # | Inhalt | Status |
 |---|--------|--------|
-| 0 | Umbau: Module, Datenbank (IndexedDB), Datensätze mit Zeitstempel, Zusammenführen statt Überschreiben, Umzug der bestehenden Daten | in Arbeit |
+| 0 | Umbau: Module, Datenbank (IndexedDB), Datensätze mit Zeitstempel, Zusammenführen statt Überschreiben, Umzug der bestehenden Daten | erledigt (PR #2) |
 | 1 | APK (Capacitor) und .exe (Electron), gebaut über GitHub Actions. Abgleich per WLAN mit QR-Code: der Laptop zeigt den Code, das Handy scannt, beide gleichen ab. Unterwegs über den Hotspot des Handys. Datei und Backup-Code bleiben als Notfallweg. | offen |
-| 2 | Drohnen/Builds statt fest eingetragenem Seeker 3, Teiledatenbank mit Lagerbestand und Mindestbestand, Wartungs- und Reparaturlog, Betaflight-Konfiguration (`diff all`) pro Build, Bestellliste (Text, CSV, PDF), eigene Trainingseinheiten, bearbeitbare Checklisten und Links | offen |
+| 2a | Reiter Werkstatt: Drohnen statt fest eingetragenem Seeker 3, Teilelager mit Mindestbestand, Startkatalog aus `docs/teilekatalog.md`, Bestellliste (Teilen, CSV, Drucken/PDF) | in Arbeit |
+| 2b | Wartungs- und Reparaturlog, Betaflight-Konfiguration (`diff all`) pro Drohne, verbrauchte Teile beim Crash abbuchen, eigene Trainingseinheiten, bearbeitbare Checklisten und Links | offen |
 | 3 | Reiter "Aufnahmen": microSD auslesen, Videos in Galerie (APK) bzw. Ordner (.exe) speichern, Flug zuordnen, Hinweise und Links zu Schnittprogrammen (DaVinci Resolve, CapCut, Gyroflow, Shotcut, Kdenlive). Kein eigener Videoschnitt. | wartet auf `.srt`-Befund |
 | 4 | GPS-Flugweg auf der Karte, Höchstgeschwindigkeit und Höhe automatisch ins Flugbuch | wartet auf `.srt`-Befund |
 | später | Version für andere Piloten, Shop | offen |
