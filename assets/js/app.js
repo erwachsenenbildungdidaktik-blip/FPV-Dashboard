@@ -1,7 +1,7 @@
 /* ==========================================================================
    FPV OPS — Logik
    Daten liegen ausschliesslich im localStorage dieses Browsers.
-   Backup läuft über Export und Import als JSON.
+   Backup läuft über einen Backup-Code zum Teilen oder als JSON-Datei.
    ========================================================================== */
 
 (function () {
@@ -1109,6 +1109,159 @@
 
   /* ---------------------------------------------------- Export / Import */
 
+  // Backup-Code: der ganze Datenstand als eine Textzeile, damit er sich auf dem
+  // Handy über das Teilen-Menü in Notizen, Mail oder einen Chat an sich selbst
+  // legen lässt. Keine Datei, kein Dateimanager. "FPV1." ist komprimiert,
+  // "FPV0." der Rückfall für Browser ohne CompressionStream.
+
+  function b64urlFromBytes(bytes) {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function bytesFromB64url(str) {
+    const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+    const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function streamBytes(bytes, transform) {
+    const stream = new Blob([bytes]).stream().pipeThrough(transform);
+    return new Response(stream).arrayBuffer().then((b) => new Uint8Array(b));
+  }
+
+  function encodeBackup() {
+    const bytes = new TextEncoder().encode(JSON.stringify(state));
+    if (typeof CompressionStream !== "function") {
+      return Promise.resolve("FPV0." + b64urlFromBytes(bytes));
+    }
+    return streamBytes(bytes, new CompressionStream("deflate-raw")).then(
+      (z) => "FPV1." + b64urlFromBytes(z),
+      () => "FPV0." + b64urlFromBytes(bytes)
+    );
+  }
+
+  function decodeBackup(text) {
+    const t = String(text || "").replace(/\s+/g, "");
+    return Promise.resolve()
+      .then(function () {
+        if (t.charAt(0) === "{") return t;
+        const m = /^FPV([01])\.([A-Za-z0-9_-]+)$/.exec(t);
+        if (!m) throw new Error("kein Backup-Code");
+        const bytes = bytesFromB64url(m[2]);
+        if (m[1] === "0") return new TextDecoder().decode(bytes);
+        if (typeof DecompressionStream !== "function") {
+          throw new Error("Browser kann den Code nicht entpacken");
+        }
+        return streamBytes(bytes, new DecompressionStream("deflate-raw")).then((b) =>
+          new TextDecoder().decode(b)
+        );
+      })
+      .then(function (json) {
+        const p = JSON.parse(json);
+        if (!p || typeof p !== "object" || Array.isArray(p)) throw new Error("kein Objekt");
+        return p;
+      });
+  }
+
+  function applyBackup(p) {
+    if (!window.confirm("Das überschreibt alle aktuellen Daten in diesem Browser. Fortfahren?")) return false;
+    localStorage.setItem(KEY, JSON.stringify(p));
+    state = load();
+    renderAll();
+    return true;
+  }
+
+  function backupDialog() {
+    openDialog(
+      "Backup",
+      '<p style="margin-bottom:12px">Gespeichert wird automatisch in diesem Browser. Das Backup ist für den Fall, ' +
+        "dass die Browserdaten weg sind, oder für den Umzug auf ein anderes Gerät.</p>" +
+        '<p style="margin-bottom:12px"><strong>Backup-Code</strong>: eine Textzeile statt einer Datei. ' +
+        "In Notizen oder einem Chat an dich selbst ablegen, zum Wiederherstellen unten einfügen.</p>" +
+        '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">' +
+        '<button type="button" class="btn btn--primary" data-act="code-share">Code teilen</button>' +
+        '<button type="button" class="btn" data-act="code-copy">Code kopieren</button>' +
+        "</div>" +
+        '<label class="field"><span class="label">Code einfügen</span>' +
+        '<textarea id="f-code" rows="4" autocomplete="off" autocapitalize="off" spellcheck="false" ' +
+        'placeholder="FPV1.…"></textarea></label>' +
+        '<button type="button" class="btn" data-act="code-restore" style="margin-bottom:18px">Aus Code wiederherstellen</button>' +
+        '<p style="margin-bottom:8px"><strong>Als Datei</strong> — für den Laptop oder ein Archiv.</p>' +
+        '<div style="display:flex;gap:7px;flex-wrap:wrap">' +
+        '<button type="button" class="btn btn--sm" data-act="export">Datei exportieren</button>' +
+        '<button type="button" class="btn btn--sm" data-act="import">Datei importieren</button>' +
+        "</div>"
+    );
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    // Rückfall für ältere Browser: Code ins Feld schreiben und markieren.
+    return Promise.reject(new Error("keine Zwischenablage"));
+  }
+
+  function showCodeInField(code) {
+    const f = $("#f-code");
+    if (!f) return;
+    f.value = code;
+    f.focus();
+    f.select();
+  }
+
+  function codeCopy() {
+    encodeBackup()
+      .then((code) =>
+        copyText(code).then(
+          () => toast("Backup-Code kopiert"),
+          () => {
+            showCodeInField(code);
+            toast("Code steht im Feld, bitte selbst kopieren");
+          }
+        )
+      )
+      .catch(() => toast("Code konnte nicht erzeugt werden"));
+  }
+
+  function codeShare() {
+    encodeBackup()
+      .then(function (code) {
+        if (!navigator.share) return codeCopy();
+        return navigator
+          .share({ title: "FPV OPS Backup " + deDate(today()), text: code })
+          .catch(function (e) {
+            // Abbrechen im Teilen-Menü ist kein Fehler.
+            if (e && e.name === "AbortError") return;
+            return codeCopy();
+          });
+      })
+      .catch(() => toast("Code konnte nicht erzeugt werden"));
+  }
+
+  function codeRestore() {
+    const f = $("#f-code");
+    const text = f ? f.value.trim() : "";
+    if (!text) return toast("Zuerst einen Backup-Code einfügen");
+    decodeBackup(text)
+      .then(function (p) {
+        try {
+          if (!applyBackup(p)) return;
+        } catch (e) {
+          return toast("Speichern fehlgeschlagen — Browserspeicher blockiert?");
+        }
+        closeDialog();
+        toast("Backup wiederhergestellt");
+      })
+      .catch(() => toast("Code nicht lesbar — vollständig eingefügt?"));
+  }
+
   function exportJson() {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
@@ -1126,17 +1279,14 @@
   function importJson(file) {
     const r = new FileReader();
     r.onload = function () {
-      try {
-        const p = JSON.parse(r.result);
-        if (!p || typeof p !== "object") throw new Error("kein Objekt");
-        if (!window.confirm("Import überschreibt alle aktuellen Daten in diesem Browser. Fortfahren?")) return;
-        localStorage.setItem(KEY, JSON.stringify(p));
-        state = load();
-        renderAll();
-        toast("Backup eingelesen");
-      } catch (e) {
-        toast("Datei nicht lesbar");
-      }
+      decodeBackup(r.result)
+        .then(function (p) {
+          if (applyBackup(p)) {
+            closeDialog();
+            toast("Backup eingelesen");
+          }
+        })
+        .catch(() => toast("Datei nicht lesbar"));
     };
     r.readAsText(file);
   }
@@ -1273,6 +1423,14 @@
       case "pf-go":
         return preflightGo();
 
+      case "backup":
+        return backupDialog();
+      case "code-share":
+        return codeShare();
+      case "code-copy":
+        return codeCopy();
+      case "code-restore":
+        return codeRestore();
       case "export":
         return exportJson();
       case "import":
@@ -1352,6 +1510,14 @@
     b.textContent =
       "Dieser Browser erlaubt keinen lokalen Speicher. Eingaben gehen beim Neuladen verloren. Im privaten Modus oder in einer Vorschau ist das normal.";
     $("#view-dashboard").prepend(b);
+  }
+
+  // Den Browser bitten, die Daten nicht bei Platzmangel oder nach längerer
+  // Pause wegzuräumen. Ob er zustimmt, entscheidet er selbst.
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persisted().then(function (yes) {
+      if (!yes) return navigator.storage.persist();
+    }).catch(function () {});
   }
 
   if ("serviceWorker" in navigator) {

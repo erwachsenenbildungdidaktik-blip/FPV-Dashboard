@@ -28,8 +28,7 @@
       </div>
     </div>
     <span class="topbar__spacer"></span>
-    <button class="btn btn--sm btn--ghost" data-act="export" title="Backup herunterladen">Export</button>
-    <button class="btn btn--sm btn--ghost" data-act="import" title="Backup einlesen">Import</button>
+    <button class="btn btn--sm btn--ghost" data-act="backup" title="Backup sichern oder wiederherstellen">Backup</button>
   </div>
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-view="dashboard" aria-selected="true">Dashboard</button>
@@ -53,21 +52,20 @@
     <p style="margin-bottom:8px">
       Alle Eingaben liegen ausschliesslich im Speicher dieses Browsers. Sie werden nirgendwohin
       übertragen und sind auf anderen Geräten nicht sichtbar. Browserdaten löschen heisst Daten weg,
-      deshalb regelmässig exportieren.
+      deshalb regelmässig ein Backup sichern, am Handy am einfachsten als Backup-Code.
     </p>
     <p style="margin-bottom:8px">
       Dieses Werkzeug ersetzt weder die Drohnenkarte noch dein Fernpilotenzeugnis. Massgeblich sind
       die Angaben des BAZL am Flugtag.
     </p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn btn--sm" data-act="export">Backup exportieren</button>
-      <button class="btn btn--sm" data-act="import">Backup importieren</button>
+      <button class="btn btn--sm" data-act="backup">Backup sichern / wiederherstellen</button>
       <button class="btn btn--sm btn--danger" data-act="wipe">Alles zurücksetzen</button>
     </div>
   </footer>
 </main>
 
-<input type="file" id="file" accept="application/json,.json" hidden>
+<input type="file" id="file" accept="application/json,.json,text/plain,.txt" hidden>
 
 <dialog id="dlg">
   <div class="dlg__form">
