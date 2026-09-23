@@ -1,5 +1,9 @@
 # Teilekatalog — Entwurf
 
+Grundsatz: Was der Konfigurator von fpvracing.ch auf der Seeker-3-Seite vorschlägt, gilt als
+passend zum Seeker 3. Ausnahme sind Teile, die an ein anderes Gerät gebunden sind, etwa Akkus für
+die Funke: Die richten sich nach der eigenen Funke.
+
 Sammelt die Startdaten für die Teiledatenbank (Etappe 2, siehe `ROADMAP.md`). Jede Angabe mit
 Quelle und Datum. Preise ändern sich; sie sind ein Stand, kein Angebot.
 
@@ -27,7 +31,7 @@ Quelle und Datum. Preise ändern sich; sie sind ein Stand, kein Angebot.
 
 ## Ersatz- und Verschleissteile
 
-### Props (bei fpvracing.ch als passend zum Seeker 3 geführt)
+### Props (Konfigurator fpvracing.ch, passend zum Seeker 3)
 
 | Teil | Steigung | Preis | Quelle |
 |---|---|---|---|
@@ -48,7 +52,7 @@ Messwert für den Seeker 3.
 |---|---|---|
 | DeepSpace Seeker 3 Ersatzarm hinten | offen | fpvracing.ch |
 
-### Flugakkus (Konfigurator fpvracing.ch, alle 4S mit XT30)
+### Flugakkus (Konfigurator fpvracing.ch, alle 4S mit XT30, passend zum Seeker 3)
 
 | Akku | Preis | Gewicht | Quelle |
 |---|---|---|---|
@@ -92,15 +96,12 @@ Packs. Die App zeigt daraus das Startgewicht pro Akku und ob es unter 250 g lieg
 
 ### Akkus für die Funke
 
-| Akku | Preis | Passt in |
+| Akku | Preis | Zur eigenen TX16S Mk3 MAX |
 |---|---|---|
-| Samsung INR18650-35E, 3500 mAh (Flat Top) | 11.90 CHF | Funken mit 18650-Zellen |
-| Samsung INR18650-30Q, 3000 mAh (Button Top) | 11.90 CHF | Funken mit 18650-Zellen |
-| Keeppower IMR18350, 1200 mAh (Flat Top), 2 Stück | 18.90 CHF | Funken mit 18350-Zellen |
-| GNB 6500 mAh 2S LiPo | 38.90 CHF | laut Shop Boxer und TX16S MKII |
-
-Welche Zelle in welche Funke passt, steht beim jeweiligen Modell. Für die Bestellliste zählt nur
-der Typ der eigenen Funke.
+| Samsung INR18650-35E, 3500 mAh (Flat Top) | 11.90 CHF | passt (im Besitz, 2 Stück) |
+| Samsung INR18650-30Q, 3000 mAh (Button Top) | 11.90 CHF | passt, 18650 |
+| GNB 6500 mAh 2S LiPo | 38.90 CHF | offen: vom Shop für TX16S **Mk II** und Boxer angegeben |
+| Keeppower IMR18350, 1200 mAh (Flat Top), 2 Stück | 18.90 CHF | nein: 18350 ist kürzer als 18650, für kleine Funken wie die Pocket |
 
 Alle Preise Stand 23.09.2026, Quelle: Konfigurator auf der Seeker-3-Seite von fpvracing.ch.
 
