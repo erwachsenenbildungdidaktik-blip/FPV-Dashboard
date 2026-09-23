@@ -1,52 +1,28 @@
 /* ==========================================================================
-   FPV OPS — Logik
-   Daten liegen ausschliesslich im localStorage dieses Browsers.
-   Backup läuft über einen Backup-Code zum Teilen oder als JSON-Datei.
+   FPV OPS — Logik und Ansichten
+   Daten liegen ausschliesslich auf diesem Gerät (siehe core/store.js).
+   Backup läuft über einen Backup-Code zum Teilen oder als Datei und führt
+   beim Einlesen zusammen, statt zu überschreiben.
    ========================================================================== */
+
+import { $, $$, uid, h, today, deDate, daysSince, fmtMin } from "./core/util.js";
+import * as store from "./core/store.js";
+import { encodeBackup, decodeBackup } from "./core/backup.js";
 
 (function () {
   "use strict";
 
+  // Nur noch für Kleinigkeiten pro Gerät, etwa den zuletzt offenen Reiter.
   const KEY = "fpv-ops-v1";
-  const $ = (s, r) => (r || document).querySelector(s);
-  const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
 
-  /* ------------------------------------------------------------ Hilfen */
+  let state;
 
-  function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-
-  function h(v) {
-    return String(v == null ? "" : v)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function today() {
-    const d = new Date();
-    return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
-  }
-
-  function deDate(iso) {
-    if (!iso) return "—";
-    const p = String(iso).slice(0, 10).split("-");
-    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : iso;
-  }
-
-  function daysSince(iso) {
-    if (!iso) return null;
-    const ms = Date.now() - new Date(iso + "T12:00:00").getTime();
-    return Math.floor(ms / 864e5);
-  }
-
-  function fmtMin(m) {
-    m = Math.round(m || 0);
-    if (m < 60) return m + " min";
-    return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") + " min";
+  function save() {
+    store.commit(state).catch(function (e) {
+      console.warn("Speichern fehlgeschlagen.", e);
+      toast("Speichern fehlgeschlagen — Browserspeicher blockiert?");
+    });
+    return true;
   }
 
   function toast(msg) {
@@ -55,71 +31,6 @@
     t.classList.add("is-on");
     clearTimeout(toast._t);
     toast._t = setTimeout(() => t.classList.remove("is-on"), 2200);
-  }
-
-  /* ----------------------------------------------------------- Speicher */
-
-  function blankState() {
-    const s = {
-      v: 1,
-      batteries: [],
-      flights: [],
-      spots: [],
-      training: {},
-      checks: {},
-      settings: { lifespan: 200 },
-    };
-    DEFAULT_BATTERIES.forEach((b) => {
-      s.batteries.push({
-        id: uid(),
-        label: b.label,
-        brand: b.brand,
-        mah: b.mah,
-        cells: b.cells,
-        crate: b.crate,
-        cycles: 0,
-        status: "storage",
-        statusSince: today(),
-        added: today(),
-        notes: "",
-      });
-    });
-    return s;
-  }
-
-  let state;
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return blankState();
-      const p = JSON.parse(raw);
-      const b = blankState();
-      // Bewusst flach zusammenführen, damit neue Felder später dazukommen können.
-      return {
-        v: 1,
-        batteries: Array.isArray(p.batteries) ? p.batteries : b.batteries,
-        flights: Array.isArray(p.flights) ? p.flights : [],
-        spots: Array.isArray(p.spots) ? p.spots : [],
-        training: p.training && typeof p.training === "object" ? p.training : {},
-        checks: p.checks && typeof p.checks === "object" ? p.checks : {},
-        settings: Object.assign({ lifespan: 200 }, p.settings || {}),
-      };
-    } catch (e) {
-      console.warn("Speicher nicht lesbar, starte leer.", e);
-      return blankState();
-    }
-  }
-
-  function save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      return true;
-    } catch (e) {
-      console.warn("Speichern fehlgeschlagen.", e);
-      toast("Speichern fehlgeschlagen — Browserspeicher blockiert?");
-      return false;
-    }
   }
 
   /* ------------------------------------------------------- Berechnungen */
@@ -834,9 +745,12 @@
       mah: Number($("#f-mah").value) || 0,
       cells: Number($("#f-cells").value) || 0,
       crate: Number($("#f-crate").value) || 0,
-      cycles: Math.max(0, Number($("#f-cycles").value) || 0),
       notes: $("#f-notes").value.trim(),
     };
+    // Eingegeben wird der Gesamtstand, gespeichert der Anteil, der nicht aus
+    // Flügen und einzeln gebuchten Zyklen kommt.
+    const total = Math.max(0, Number($("#f-cycles").value) || 0);
+    rec.cyclesBase = Math.max(0, total - (id ? store.autoCycles(state, id) : 0));
     if (id) {
       const b = state.batteries.find((x) => x.id === id);
       Object.assign(b, rec);
@@ -920,14 +834,9 @@
       notes: $("#f-fnotes").value.trim(),
     };
 
+    // Zyklen zählt der Speicher aus den Flügen selbst, hier nur den Status setzen.
     if (id) {
-      const f = state.flights.find((x) => x.id === id);
-      // Zyklen der vorherigen Auswahl zurücknehmen, dann neu buchen.
-      (f.batteryIds || []).forEach((bid) => {
-        const b = state.batteries.find((x) => x.id === bid);
-        if (b) b.cycles = Math.max(0, (Number(b.cycles) || 0) - 1);
-      });
-      Object.assign(f, rec);
+      Object.assign(state.flights.find((x) => x.id === id), rec);
     } else {
       state.flights.push(Object.assign({ id: uid() }, rec));
     }
@@ -935,7 +844,6 @@
     picked.forEach((bid) => {
       const b = state.batteries.find((x) => x.id === bid);
       if (b) {
-        b.cycles = (Number(b.cycles) || 0) + 1;
         b.status = "empty";
         b.statusSince = rec.date;
       }
@@ -1109,72 +1017,16 @@
 
   /* ---------------------------------------------------- Export / Import */
 
-  // Backup-Code: der ganze Datenstand als eine Textzeile, damit er sich auf dem
-  // Handy über das Teilen-Menü in Notizen, Mail oder einen Chat an sich selbst
-  // legen lässt. Keine Datei, kein Dateimanager. "FPV1." ist komprimiert,
-  // "FPV0." der Rückfall für Browser ohne CompressionStream.
-
-  function b64urlFromBytes(bytes) {
-    let bin = "";
-    for (let i = 0; i < bytes.length; i += 0x8000) {
-      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    }
-    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-
-  function bytesFromB64url(str) {
-    const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
-    const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  }
-
-  function streamBytes(bytes, transform) {
-    const stream = new Blob([bytes]).stream().pipeThrough(transform);
-    return new Response(stream).arrayBuffer().then((b) => new Uint8Array(b));
-  }
-
-  function encodeBackup() {
-    const bytes = new TextEncoder().encode(JSON.stringify(state));
-    if (typeof CompressionStream !== "function") {
-      return Promise.resolve("FPV0." + b64urlFromBytes(bytes));
-    }
-    return streamBytes(bytes, new CompressionStream("deflate-raw")).then(
-      (z) => "FPV1." + b64urlFromBytes(z),
-      () => "FPV0." + b64urlFromBytes(bytes)
-    );
-  }
-
-  function decodeBackup(text) {
-    const t = String(text || "").replace(/\s+/g, "");
-    return Promise.resolve()
-      .then(function () {
-        if (t.charAt(0) === "{") return t;
-        const m = /^FPV([01])\.([A-Za-z0-9_-]+)$/.exec(t);
-        if (!m) throw new Error("kein Backup-Code");
-        const bytes = bytesFromB64url(m[2]);
-        if (m[1] === "0") return new TextDecoder().decode(bytes);
-        if (typeof DecompressionStream !== "function") {
-          throw new Error("Browser kann den Code nicht entpacken");
-        }
-        return streamBytes(bytes, new DecompressionStream("deflate-raw")).then((b) =>
-          new TextDecoder().decode(b)
-        );
-      })
-      .then(function (json) {
-        const p = JSON.parse(json);
-        if (!p || typeof p !== "object" || Array.isArray(p)) throw new Error("kein Objekt");
-        return p;
-      });
-  }
-
   function applyBackup(p) {
-    if (!window.confirm("Das überschreibt alle aktuellen Daten in diesem Browser. Fortfahren?")) return false;
-    localStorage.setItem(KEY, JSON.stringify(p));
-    state = load();
-    renderAll();
-    return true;
+    return store.merge(p).then(function (res) {
+      state = res.state;
+      renderAll();
+      return res.changed;
+    });
+  }
+
+  function mergedToast(n) {
+    toast(n ? n + (n === 1 ? " Eintrag" : " Einträge") + " übernommen" : "Nichts Neues, alles schon da");
   }
 
   function backupDialog() {
@@ -1184,6 +1036,8 @@
         "dass die Browserdaten weg sind, oder für den Umzug auf ein anderes Gerät.</p>" +
         '<p style="margin-bottom:12px"><strong>Backup-Code</strong>: eine Textzeile statt einer Datei. ' +
         "In Notizen oder einem Chat an dich selbst ablegen, zum Wiederherstellen unten einfügen.</p>" +
+        '<p style="margin-bottom:12px">Einlesen führt zusammen: Neues kommt dazu, bei Einträgen, die es auf ' +
+        "beiden Seiten gibt, gewinnt die neuere Fassung. Nichts wird pauschal überschrieben.</p>" +
         '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">' +
         '<button type="button" class="btn btn--primary" data-act="code-share">Code teilen</button>' +
         '<button type="button" class="btn" data-act="code-copy">Code kopieren</button>' +
@@ -1217,7 +1071,7 @@
   }
 
   function codeCopy() {
-    encodeBackup()
+    encodeBackup(store.exportPayload())
       .then((code) =>
         copyText(code).then(
           () => toast("Backup-Code kopiert"),
@@ -1231,7 +1085,7 @@
   }
 
   function codeShare() {
-    encodeBackup()
+    encodeBackup(store.exportPayload())
       .then(function (code) {
         if (!navigator.share) return codeCopy();
         return navigator
@@ -1251,19 +1105,19 @@
     if (!text) return toast("Zuerst einen Backup-Code einfügen");
     decodeBackup(text)
       .then(function (p) {
-        try {
-          if (!applyBackup(p)) return;
-        } catch (e) {
-          return toast("Speichern fehlgeschlagen — Browserspeicher blockiert?");
-        }
-        closeDialog();
-        toast("Backup wiederhergestellt");
+        return applyBackup(p).then(
+          function (n) {
+            closeDialog();
+            mergedToast(n);
+          },
+          () => toast("Speichern fehlgeschlagen — Browserspeicher blockiert?")
+        );
       })
       .catch(() => toast("Code nicht lesbar — vollständig eingefügt?"));
   }
 
   function exportJson() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(store.exportPayload())], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "fpv-ops-backup-" + today() + ".json";
@@ -1281,10 +1135,10 @@
     r.onload = function () {
       decodeBackup(r.result)
         .then(function (p) {
-          if (applyBackup(p)) {
+          return applyBackup(p).then(function (n) {
             closeDialog();
-            toast("Backup eingelesen");
-          }
+            mergedToast(n);
+          });
         })
         .catch(() => toast("Datei nicht lesbar"));
     };
@@ -1358,9 +1212,8 @@
         }
         return;
       case "bat-cycle": {
-        const b = state.batteries.find((x) => x.id === id);
-        if (b) {
-          b.cycles = (Number(b.cycles) || 0) + 1;
+        if (state.batteries.some((x) => x.id === id)) {
+          state.cycleLog.push({ id: uid(), batteryId: id, date: today() });
           save();
           renderBatteries();
           renderDashboard();
@@ -1376,12 +1229,6 @@
         return flightSave(id);
       case "flight-del":
         if (window.confirm("Diesen Flug löschen?")) {
-          const f = state.flights.find((x) => x.id === id);
-          if (f)
-            (f.batteryIds || []).forEach((bid) => {
-              const b = state.batteries.find((x) => x.id === bid);
-              if (b) b.cycles = Math.max(0, (Number(b.cycles) || 0) - 1);
-            });
           state.flights = state.flights.filter((x) => x.id !== id);
           save();
           closeDialog();
@@ -1438,15 +1285,14 @@
       case "wipe":
         if (
           window.confirm(
-            "Wirklich alle Daten in diesem Browser löschen? Das lässt sich nur über ein Backup rückgängig machen."
+            "Wirklich alle Daten auf diesem Gerät löschen? Zurück holst du sie nur über ein Backup."
           )
         ) {
-          try {
-            localStorage.removeItem(KEY);
-          } catch (e) {}
-          state = load();
-          renderAll();
-          toast("Alles zurückgesetzt");
+          store.reset().then(function (s2) {
+            state = s2;
+            renderAll();
+            toast("Alles zurückgesetzt");
+          });
         }
         return;
     }
@@ -1491,29 +1337,33 @@
 
   /* ---------------------------------------------------------------- Start */
 
-  state = load();
-  renderAll();
+  store
+    .open()
+    .then(function (s0) {
+      state = s0;
+      renderAll();
 
-  let startTab = "dashboard";
-  try {
-    startTab = localStorage.getItem(KEY + ":tab") || "dashboard";
-  } catch (e) {}
-  showView(startTab);
+      let startTab = "dashboard";
+      try {
+        startTab = localStorage.getItem(KEY + ":tab") || "dashboard";
+      } catch (e) {}
+      showView(startTab);
 
-  // Speicher-Warnung, falls der Browser gar nichts behält.
-  try {
-    localStorage.setItem(KEY + ":probe", "1");
-    localStorage.removeItem(KEY + ":probe");
-  } catch (e) {
-    const b = document.createElement("div");
-    b.className = "banner";
-    b.textContent =
-      "Dieser Browser erlaubt keinen lokalen Speicher. Eingaben gehen beim Neuladen verloren. Im privaten Modus oder in einer Vorschau ist das normal.";
-    $("#view-dashboard").prepend(b);
-  }
+      // Warnung, falls der Browser gar nichts behält.
+      if (store.storageKind() === "memory") {
+        const b = document.createElement("div");
+        b.className = "banner";
+        b.textContent =
+          "Dieser Browser erlaubt keinen lokalen Speicher. Eingaben gehen beim Neuladen verloren. Im privaten Modus oder in einer Vorschau ist das normal.";
+        $("#view-dashboard").prepend(b);
+      }
+    })
+    .catch(function (e) {
+      console.error(e);
+      $("#view-dashboard").innerHTML =
+        '<div class="banner">Der Speicher liess sich nicht öffnen. Bitte die Seite neu laden.</div>';
+    });
 
-  // Den Browser bitten, die Daten nicht bei Platzmangel oder nach längerer
-  // Pause wegzuräumen. Ob er zustimmt, entscheidet er selbst.
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persisted().then(function (yes) {
       if (!yes) return navigator.storage.persist();

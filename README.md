@@ -13,10 +13,12 @@ Läuft ohne Server, ohne Konto, ohne Datenbank. Auf dem Handy als App installier
 
 ## Wichtig zuerst: wo die Daten liegen
 
-Alle Eingaben liegen im `localStorage` des Browsers, in dem du die App geöffnet hast. Das heisst:
+Alle Eingaben liegen in der Datenbank (IndexedDB) des Browsers, in dem du die App geöffnet hast.
+Das heisst:
 
 - **Nichts wird übertragen.** Weder an GitHub noch sonst wohin. Das Repo enthält nur den Code.
-- **Nichts wird synchronisiert.** Handy und Laptop führen getrennte Datenbestände.
+- **Nichts wird automatisch synchronisiert.** Handy und Laptop führen getrennte Datenbestände, bis
+  du sie über ein Backup abgleichst (siehe unten).
 - **Browserdaten löschen heisst Daten weg.** Auch "Website-Daten entfernen" in den iOS-Einstellungen.
 
 Zwei Ausnahmen, bei denen die App nach draussen spricht:
@@ -39,8 +41,21 @@ Deshalb ist **Backup** im Kopf der App keine Spielerei, sondern die Backup-Strat
 - **Datei** als JSON, für den Laptop oder ein Archiv. Das Dateifeld nimmt auch einen Backup-Code
   als Textdatei an.
 
-Beide Wege eignen sich auch, um Handy und Laptop abzugleichen. Eine automatische Synchronisation
-gibt es nicht, dafür bräuchte es einen Server.
+**Einlesen führt zusammen, statt zu überschreiben.** Jeder Eintrag trägt einen Zeitstempel. Neues
+kommt dazu, bei Einträgen, die es auf beiden Seiten gibt, gewinnt die neuere Fassung, Gelöschtes
+wird auch auf der anderen Seite gelöscht. Trainingsnotizen zum selben Manöver bleiben von beiden
+Seiten erhalten. Damit eignen sich beide Wege auch zum Abgleich zwischen Handy und Laptop: Code
+von A in B einlesen, dann Code von B in A.
+
+Akkuzyklen werden dafür nicht mehr als Zahl gespeichert, sondern gezählt: der im Akku-Dialog
+eingetragene Grundwert, plus jeder Flug mit diesem Akku, plus jeder einzeln gebuchte Zyklus.
+
+Beim ersten Start nach dem Update übernimmt die App den bisherigen Stand aus `localStorage`
+automatisch. Der alte Eintrag bleibt dort als Sicherheitskopie liegen. Alte Backup-Dateien und
+-Codes lassen sich weiterhin einlesen.
+
+"Alles zurücksetzen" löscht nur die Daten auf diesem Gerät, ohne Löschmarkierungen. Ein späterer
+Abgleich holt sie also vom anderen Gerät zurück, statt sie dort auch zu löschen.
 
 Zusätzlich bittet die App den Browser beim Start, ihren Speicher als dauerhaft zu behandeln
 (`navigator.storage.persist()`), damit er ihn nicht bei Platzmangel aufräumt. Ob der Browser
@@ -94,6 +109,10 @@ selbstverständlich weiterhin Netz.
 
 ## Aufbau
 
+Der geplante Ausbau (Android-App, Windows-Programm, Abgleich per WLAN, Werkstatt, Aufnahmen) steht
+in [ROADMAP.md](ROADMAP.md).
+
+
 ```
 index.html                    Struktur und Reiter
 manifest.webmanifest          Installierbarkeit als App
@@ -103,7 +122,10 @@ assets/css/style.css          Designsystem
 assets/js/data.js             Inhalte: Curriculum, Checklisten, Links, Startdaten
 assets/js/map.js              Karten: swisstopo-Kacheln, BAZL-Zonen, Radiusauswahl
 assets/js/weather.js          Wetterabruf und Einschätzung
-assets/js/app.js              Logik, Speicher, Rendern
+assets/js/app.js              Ansichten, Dialoge, Bedienung (ES-Modul)
+assets/js/core/store.js       Datenbank, Datensätze mit Zeitstempel, Zusammenführen, Umzug
+assets/js/core/backup.js      Backup-Code kodieren und dekodieren
+assets/js/core/util.js        Kleine Hilfen
 assets/vendor/leaflet/        Leaflet 1.9.4, lokal eingebunden (BSD-2, siehe LICENSE)
 assets/icons/                 App-Icons
 ```
@@ -112,8 +134,9 @@ assets/icons/                 App-Icons
 
 - **Trainingsmanöver, Checklisten, Links, Akku-Startbestand** stehen in `assets/js/data.js`.
   Das ist reiner Text, dort kannst du gefahrlos ergänzen und umformulieren.
+- **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v3"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v4"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---
