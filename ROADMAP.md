@@ -70,8 +70,12 @@ mit allen nötigen Teilen, Gewicht, Kosten und Bestellliste.
 - Bauvorlagen als feste Daten in `core/buildTemplates.js`, pro Klasse mit Quelle.
 
 **Offen vor dem Bau**
-- Welche Klasse will Hugo als ersten Eigenbau? (Bestimmt, welche Vorlage zuerst sauber sein muss.)
-- Werte für die Bauvorlagen recherchieren (Oscar Liang, Betaflight Wiki, einige RotorBuilds-Builds).
+- **Erster Eigenbau: 5 Zoll** (Entscheid Hugo, 23.09.2026). Diese Vorlage zuerst sauber
+  recherchieren (Oscar Liang, Betaflight Wiki, einige 5"-Builds auf RotorBuilds), die übrigen
+  Klassen danach.
+- Ein 5-Zöller liegt mit Akku klar über 250 g: Bauvorlage und Startgewicht-Anzeige brauchen einen
+  Hinweis auf die dann geltenden Regeln (A3-Abstände). Genaue Regeln für Eigenbauten beim BAZL
+  nachlesen, nicht aus dem Gedächtnis.
 
 ## Offene Fragen
 
