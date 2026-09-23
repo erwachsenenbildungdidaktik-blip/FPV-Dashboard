@@ -47,9 +47,11 @@ html { -webkit-text-size-adjust: 100%; }
 
 /* Grosse Bildschirme: Die Grundschrift wächst mit der Fensterbreite, und weil
    Abstände, Raster und Dialoge in rem angegeben sind, wächst alles mit.
-   1000 px breit = 16 px, 1920 px ≈ 21 px, ab 2560 px 24 px. */
+   1000 px breit = 16 px, 1920 px ≈ 21 px, ab 2560 px 24 px.
+   --ui-scale ist die eigene Textgrösse (A− / A+ oben, Strg + Mausrad). */
+html { font-size: calc(16px * var(--ui-scale, 1)); }
 @media (min-width: 1000px) {
-  html { font-size: clamp(16px, 0.55vw + 10.5px, 24px); }
+  html { font-size: calc(clamp(16px, 0.55vw + 10.5px, 24px) * var(--ui-scale, 1)); }
 }
 
 body {

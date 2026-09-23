@@ -1330,6 +1330,46 @@ import { createMedia } from "./views/media.js";
     r.readAsText(file);
   }
 
+  /* ------------------------------------------------------- Textgrösse */
+
+  // Pro Gerät, deshalb im localStorage und nicht in den abgeglichenen Daten.
+  const SCALE_KEY = KEY + ":scale";
+  let uiScale = 1;
+
+  function applyScale(v, announce) {
+    uiScale = Math.round(Math.min(2, Math.max(0.7, v)) * 10) / 10;
+    document.documentElement.style.setProperty("--ui-scale", String(uiScale));
+    try {
+      localStorage.setItem(SCALE_KEY, String(uiScale));
+    } catch (e) {}
+    if (announce) toast("Textgrösse " + Math.round(uiScale * 100) + " %");
+  }
+
+  try {
+    applyScale(Number(localStorage.getItem(SCALE_KEY)) || 1, false);
+  } catch (e) {}
+
+  // Strg + / Strg − / Strg 0 und Strg + Mausrad. Auf deutschen Tastaturen liegt
+  // "+" auf einer eigenen Taste, deshalb auf das Zeichen und den Tastencode achten.
+  document.addEventListener("keydown", function (ev) {
+    if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+    const k = ev.key;
+    if (k === "+" || k === "=" || ev.code === "NumpadAdd") applyScale(uiScale + 0.1, true);
+    else if (k === "-" || ev.code === "NumpadSubtract") applyScale(uiScale - 0.1, true);
+    else if (k === "0" || ev.code === "Numpad0") applyScale(1, true);
+    else return;
+    ev.preventDefault();
+  });
+  window.addEventListener(
+    "wheel",
+    function (ev) {
+      if (!ev.ctrlKey) return;
+      ev.preventDefault();
+      applyScale(uiScale + (ev.deltaY < 0 ? 0.1 : -0.1), true);
+    },
+    { passive: false }
+  );
+
   /* -------------------------------------------------------------- Views */
 
   const VIEWS = ["dashboard", "batteries", "workshop", "flights", "media", "training", "checklists", "links"];
@@ -1466,6 +1506,10 @@ import { createMedia } from "./views/media.js";
 
       case "backup":
         return backupDialog();
+      case "ui-bigger":
+        return applyScale(uiScale + 0.1, true);
+      case "ui-smaller":
+        return applyScale(uiScale - 0.1, true);
       case "code-share":
         return codeShare();
       case "code-copy":
