@@ -40,13 +40,66 @@ Messwert für den Seeker 3.
 |---|---|---|
 | DeepSpace Seeker 3 Ersatzarm hinten | offen | fpvracing.ch |
 
-### Akkus
+### Flugakkus (Konfigurator fpvracing.ch, alle 4S mit XT30)
 
-Offen: Liste "Radio Control Batteries" bei fpvracing.ch.
+| Akku | Preis | Gewicht | Quelle |
+|---|---|---|---|
+| Tattu R-Line 650 mAh 4S 95C | 18.90 CHF | ca. 80–82 g | Preis fpvracing.ch; Gewicht Händlerangaben |
+| GEPRC 660 mAh 4S 90C | 21.90 CHF | offen | fpvracing.ch |
+| **Tattu R-Line 750 mAh 4S 95C** (eigener Bestand, 4 Stück) | 25.90 CHF | ca. 84 g | Preis fpvracing.ch; Gewicht Händlerangaben |
+| Tattu R-Line 850 mAh 4S 150C V5.0 | 21.90 CHF | offen | fpvracing.ch |
+| Tattu 850 mAh 4S 75C | 23.90 CHF | offen | fpvracing.ch |
+
+Alle Preise Stand 23.09.2026.
+
+**Gewichtsfrage:** Der Seeker 3 wiegt laut Händlern 175 g ohne Akku. Mit dem 750er (ca. 84 g)
+ergibt das rechnerisch rund 259 g, mit dem 650er rund 256 g, also beide über 250 g. Ob die 175 g
+Props und GPS schon enthalten, ist nicht angegeben. Massgeblich ist die Waage: startklar mit Akku
+wiegen. Die 250-g-Grenze entscheidet mit darüber, in welcher Unterkategorie geflogen werden darf.
+
+## Ausrüstung am Boden (Konfigurator fpvracing.ch)
+
+### Funken (alle ELRS)
+
+| Funke | Preis |
+|---|---|
+| RadioMaster Pocket (ELRS) | 74.90 CHF |
+| RadioMaster Pocket CRUSH (ELRS) | 74.90 CHF |
+| RadioMaster Zorro (ELRS) | 139.00 CHF |
+| RadioMaster Boxer (ELRS) | 164.00 CHF |
+| RadioMaster Boxer CRUSH (ELRS) | 174.00 CHF |
+| RadioMaster TX15 (ELRS) | 179.00 CHF |
+| RadioMaster TX15 MAX (ELRS) | 259.00 CHF |
+| RadioMaster Boxer MAX (ELRS) | 279.00 CHF |
+| RadioMaster TX16S Mark II Max (ELRS) | 299.00 CHF |
+
+### Brillen (zur O4 Pro kompatibel laut DJI)
+
+| Brille | Preis |
+|---|---|
+| DJI Goggles N3 | 248.00 CHF |
+| DJI Goggles Integra | 439.00 CHF |
+| DJI Goggles 3 | 599.00 CHF |
+
+### Akkus für die Funke
+
+| Akku | Preis | Passt in |
+|---|---|---|
+| Samsung INR18650-35E, 3500 mAh (Flat Top) | 11.90 CHF | Funken mit 18650-Zellen |
+| Samsung INR18650-30Q, 3000 mAh (Button Top) | 11.90 CHF | Funken mit 18650-Zellen |
+| Keeppower IMR18350, 1200 mAh (Flat Top), 2 Stück | 18.90 CHF | Funken mit 18350-Zellen |
+| GNB 6500 mAh 2S LiPo | 38.90 CHF | laut Shop Boxer und TX16S MKII |
+
+Welche Zelle in welche Funke passt, steht beim jeweiligen Modell. Für die Bestellliste zählt nur
+der Typ der eigenen Funke.
+
+Alle Preise Stand 23.09.2026, Quelle: Konfigurator auf der Seeker-3-Seite von fpvracing.ch.
 
 ## Noch zu klären
 
 - Genaue ELRS-Empfängerversion und Antenne
-- Akkuempfehlung (Kapazität, Stecker)
+- Eigene Funke und Brille (Modell), damit die passenden Ersatzakkus in die Bestellliste kommen
+- Startklares Gewicht mit Akku (Waage)
+- Props: Preis pro Satz, Stückzahl pro Satz
 - Schraubensatz, Ersatzarm vorne, Kameraschutz
 - Motor einzeln als Ersatzteil
