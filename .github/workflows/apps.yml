@@ -65,24 +65,36 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: out
           merge-multiple: true
-      - name: Alte Fassung entfernen
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release delete apps-latest --cleanup-tag --yes --repo "${{ github.repository }}" || true
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: apps-latest
-          target_commitish: ${{ github.sha }}
-          name: FPV OPS Android-App (neuester Stand)
-          prerelease: true
-          files: |
-            out/FPV-OPS-Android.apk
-          body: |
-            Automatisch gebaut aus dem Stand ${{ github.sha }}.
+      - name: Tag auf diesen Stand setzen
+        run: |
+          git tag -f apps-latest
+          git push -f origin refs/tags/apps-latest
+      # Die Release wird nicht gelöscht und neu angelegt: das liess sie als
+      # unsichtbaren Entwurf zurück. Stattdessen alte Entwürfe entfernen und die
+      # bestehende Release aktualisieren oder beim ersten Mal anlegen.
+      - name: Release aktualisieren
+        run: |
+          cat > notes.md <<NOTES
+          Automatisch gebaut aus dem Stand ${{ github.sha }}.
 
-            **Android:** `FPV-OPS-Android.apk` auf dem Handy herunterladen und öffnen. Beim ersten Mal fragt Android, ob der Browser Apps installieren darf: erlauben. Updates installieren sich über die alte Fassung, die Daten bleiben.
+          **Android:** \`FPV-OPS-Android.apk\` auf dem Handy herunterladen und öffnen. Beim ersten Mal fragt Android, ob der Browser Apps installieren darf: erlauben. Updates installieren sich über die alte Fassung, die Daten bleiben.
+          NOTES
+          gh api "repos/$GH_REPO/releases" --jq '.[] | select(.draft) | .id' | while read -r id; do
+            gh api -X DELETE "repos/$GH_REPO/releases/$id"
+          done
+          if gh release view apps-latest >/dev/null 2>&1; then
+            gh release edit apps-latest --draft=false --prerelease --title "FPV OPS Android-App (neuester Stand)" --notes-file notes.md
+            gh release upload apps-latest out/FPV-OPS-Android.apk --clobber
+          else
+            gh release create apps-latest out/FPV-OPS-Android.apk --verify-tag --prerelease --title "FPV OPS Android-App (neuester Stand)" --notes-file notes.md
+          fi
+          gh release view apps-latest --json isDraft,assets --jq '"Entwurf: \(.isDraft), Dateien: \([.assets[].name] | join(", "))"'
