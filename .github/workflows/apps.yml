@@ -14,10 +14,19 @@ on:
       - "apps/**"
       - "tools/**"
       - ".github/workflows/apps.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "manifest.webmanifest"
+      - "sw.js"
+      - "assets/**"
+      - "apps/mobile/**"
+      - "tools/**"
+      - ".github/workflows/apps.yml"
   workflow_dispatch:
 
 concurrency:
-  group: apps
+  group: apps-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,6 +59,8 @@ jobs:
           path: FPV-OPS-Android.apk
 
   release:
+    # Nur aus main veröffentlichen; im Pull Request wird nur gebaut.
+    if: github.ref == 'refs/heads/main'
     needs: [android]
     runs-on: ubuntu-latest
     permissions:

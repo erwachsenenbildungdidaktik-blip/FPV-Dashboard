@@ -8,8 +8,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Die Bau-Pipeline zählt die Version hoch, damit Android Updates annimmt.
-        versionCode (project.findProperty("fpvVersionCode") ?: "1").toInteger()
-        versionName (project.findProperty("fpvVersionName") ?: "1.0").toString()
+        versionCode = (project.findProperty("fpvVersionCode") ?: "1").toString().toInteger()
+        versionName = (project.findProperty("fpvVersionName") ?: "1.0").toString()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
