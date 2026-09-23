@@ -95,6 +95,22 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
     return { pct: pct, cls: cls, left: Math.max(0, life - (Number(b.cycles) || 0)) };
   }
 
+  // Startgewicht = gewogene Drohne ohne Akku + Akku. Beides trägst du selbst ein,
+  // Herstellerangaben dazu sind oft ungenau.
+  function takeoffWeight(b) {
+    const dry = Number(state.settings.droneWeight) || 0;
+    const pack = Number(b.weight) || 0;
+    if (!dry || !pack) return null;
+    return dry + pack;
+  }
+
+  function weightChip(g) {
+    if (g == null) return "";
+    return g < 250
+      ? '<span class="chip chip--ok" style="text-transform:none">Startgewicht ' + g + " g · unter 250 g</span>"
+      : '<span class="chip chip--warn" style="text-transform:none">Startgewicht ' + g + " g · ab 250 g</span>";
+  }
+
   function storageWarnings() {
     return state.batteries.filter((b) => {
       if (b.status !== "charged") return false;
@@ -405,6 +421,12 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
       '<span class="label">Erwartete Lebensdauer in Zyklen</span>' +
       '<input type="number" min="20" max="1000" id="lifespan" value="' + life + '">' +
       '<small style="display:block;margin-top:6px">Richtwert für High-C-Packs im Freestyle. Der Balken pro Akku rechnet gegen diesen Wert. Das ist eine Faustregel, kein Messwert.</small>' +
+      "</label>" +
+      '<label class="field" style="margin:14px 0 0">' +
+      '<span class="label">Drohne gewogen, ohne Akku (g)</span>' +
+      '<input type="number" min="0" max="2000" step="1" id="drone-weight" inputmode="numeric" placeholder="z. B. 175" value="' +
+      h(state.settings.droneWeight || "") + '">' +
+      '<small style="display:block;margin-top:6px">Startklar mit Props, GPS und Kamera, nur ohne Akku, auf die Waage. Zusammen mit dem Akkugewicht ergibt das das Startgewicht pro Akku. Welche Regeln ab 250 g gelten, steht beim BAZL.</small>' +
       "</label></div>";
 
     if (!state.batteries.length) {
@@ -431,6 +453,9 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
             ? '<div class="row__meta" style="color:var(--warn);margin-top:8px">Seit ' + d +
               " Tagen voll geladen. Auf Lagerspannung bringen.</div>"
             : '<div class="row__meta" style="margin-top:8px">Status seit ' + deDate(b.statusSince) + "</div>") +
+          (takeoffWeight(b) != null
+            ? '<div style="margin-top:8px">' + weightChip(takeoffWeight(b)) + "</div>"
+            : "") +
           (b.notes ? '<div class="row__meta">' + h(b.notes) + "</div>" : "") +
           '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">' +
           '<button class="btn btn--sm" data-act="bat-cycle" data-id="' + b.id + '">+1 Zyklus</button>' +
@@ -718,7 +743,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
 
   function batteryDialog(id) {
     const b = id ? state.batteries.find((x) => x.id === id) : null;
-    const v = b || { label: "", brand: "", mah: 750, cells: 4, crate: 95, cycles: 0, notes: "" };
+    const v = b || { label: "", brand: "", mah: 750, cells: 4, crate: 95, cycles: 0, weight: "", notes: "" };
     openDialog(
       b ? "Akku bearbeiten" : "Akku erfassen",
       '<label class="field"><span class="label">Bezeichnung</span><input type="text" id="f-label" value="' +
@@ -730,6 +755,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
         '<label class="field"><span class="label">Zellen</span><input type="number" id="f-cells" value="' + h(v.cells) + '"></label>' +
         '<label class="field"><span class="label">C-Rate</span><input type="number" id="f-crate" value="' + h(v.crate) + '"></label>' +
         '<label class="field"><span class="label">Zyklen</span><input type="number" id="f-cycles" value="' + h(v.cycles) + '"></label>' +
+        '<label class="field"><span class="label">Gewicht g</span><input type="number" id="f-weight" min="0" step="1" inputmode="numeric" value="' + h(v.weight || "") + '"></label>' +
         "</div>" +
         '<label class="field"><span class="label">Notizen</span><textarea id="f-notes" placeholder="Auffälligkeiten, Puffing, Innenwiderstand">' +
         h(v.notes) + "</textarea></label>",
@@ -745,6 +771,7 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
       mah: Number($("#f-mah").value) || 0,
       cells: Number($("#f-cells").value) || 0,
       crate: Number($("#f-crate").value) || 0,
+      weight: Math.max(0, Number($("#f-weight").value) || 0) || "",
       notes: $("#f-notes").value.trim(),
     };
     // Eingegeben wird der Gesamtstand, gespeichert der Anteil, der nicht aus
@@ -1317,6 +1344,12 @@ import { encodeBackup, decodeBackup } from "./core/backup.js";
       state.checks[cid][el.dataset.i] = el.checked;
       save();
       updateChecklistProgress(cid);
+      return;
+    }
+    if (ev.target.id === "drone-weight") {
+      state.settings.droneWeight = Math.max(0, Math.round(Number(ev.target.value) || 0)) || "";
+      save();
+      renderBatteries();
       return;
     }
     if (ev.target.id === "lifespan") {

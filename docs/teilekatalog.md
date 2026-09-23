@@ -54,8 +54,9 @@ Alle Preise Stand 23.09.2026.
 
 **Gewichtsfrage:** Der Seeker 3 wiegt laut Händlern 175 g ohne Akku. Mit dem 750er (ca. 84 g)
 ergibt das rechnerisch rund 259 g, mit dem 650er rund 256 g, also beide über 250 g. Ob die 175 g
-Props und GPS schon enthalten, ist nicht angegeben. Massgeblich ist die Waage: startklar mit Akku
-wiegen. Die 250-g-Grenze entscheidet mit darüber, in welcher Unterkategorie geflogen werden darf.
+Props und GPS schon enthalten, ist nicht angegeben. Massgeblich ist die Waage: In der App unter
+"Akkus" das gewogene Gewicht der Drohne ohne Akku eintragen und im Akku-Dialog das Gewicht des
+Packs. Die App zeigt daraus das Startgewicht pro Akku und ob es unter 250 g liegt.
 
 ## Ausrüstung am Boden (Konfigurator fpvracing.ch)
 
@@ -99,7 +100,6 @@ Alle Preise Stand 23.09.2026, Quelle: Konfigurator auf der Seeker-3-Seite von fp
 
 - Genaue ELRS-Empfängerversion und Antenne
 - Eigene Funke und Brille (Modell), damit die passenden Ersatzakkus in die Bestellliste kommen
-- Startklares Gewicht mit Akku (Waage)
 - Props: Preis pro Satz, Stückzahl pro Satz
 - Schraubensatz, Ersatzarm vorne, Kameraschutz
 - Motor einzeln als Ersatzteil
