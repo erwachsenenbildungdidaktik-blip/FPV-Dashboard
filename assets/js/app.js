@@ -10,6 +10,7 @@ import * as store from "./core/store.js";
 import { encodeBackup, decodeBackup } from "./core/backup.js";
 import { createWorkshop } from "./views/workshop.js";
 import { createContent } from "./views/content.js";
+import { createSync } from "./views/sync.js";
 
 (function () {
   "use strict";
@@ -43,6 +44,14 @@ import { createContent } from "./views/content.js";
     closeDialog: () => closeDialog(),
     toast: (m) => toast(m),
     rerender: () => renderAll(),
+  });
+
+  const sync = createSync({
+    applyPayload: (p) => applyBackup(p),
+    exportPayload: () => store.exportPayload(),
+    openDialog: (t, b, f) => openDialog(t, b, f),
+    closeDialog: () => closeDialog(),
+    toast: (m) => toast(m),
   });
 
   function toast(msg) {
@@ -1171,6 +1180,7 @@ import { createContent } from "./views/content.js";
   function backupDialog() {
     openDialog(
       "Backup",
+      sync.section() +
       '<p style="margin-bottom:12px">Gespeichert wird automatisch in diesem Browser. Das Backup ist für den Fall, ' +
         "dass die Browserdaten weg sind, oder für den Umzug auf ein anderes Gerät.</p>" +
         '<p style="margin-bottom:12px"><strong>Backup-Code</strong>: eine Textzeile statt einer Datei. ' +
@@ -1334,6 +1344,7 @@ import { createContent } from "./views/content.js";
     const id = el.dataset.id;
     if (act.indexOf("ws-") === 0 && workshop.click(act, el)) return;
     if (act.indexOf("ct-") === 0 && content.click(act, el)) return;
+    if (act.indexOf("sync-") === 0 && sync.click(act, el)) return;
 
     switch (act) {
       case "dlg-close":

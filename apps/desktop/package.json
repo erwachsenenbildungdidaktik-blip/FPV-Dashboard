@@ -1,0 +1,39 @@
+{
+  "name": "fpv-ops-desktop",
+  "productName": "FPV OPS",
+  "version": "1.0.0",
+  "description": "FPV OPS als Windows-Programm, mit Abgleich per WLAN",
+  "main": "main.js",
+  "private": true,
+  "author": "Hugo Rohrbacher",
+  "license": "UNLICENSED",
+  "scripts": {
+    "web": "node ../../tools/build-web.mjs apps/desktop/web",
+    "start": "npm run web && electron .",
+    "dist": "npm run web && electron-builder --win portable --x64 --publish never"
+  },
+  "build": {
+    "appId": "ch.fpvops.desktop",
+    "productName": "FPV OPS",
+    "artifactName": "FPV-OPS-${version}-portable.exe",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "sync-server.js",
+      "web/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "web/assets/icons/icon-512.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
+  }
+}

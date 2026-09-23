@@ -109,6 +109,55 @@ selbstverständlich weiterhin Netz.
 
 ---
 
+## Android-App und Windows-Programm
+
+**Android:** Wird bei jeder Änderung auf GitHub automatisch gebaut und liegt hier zum Download:
+<https://github.com/erwachsenenbildungdidaktik-blip/FPV-Dashboard/releases/tag/apps-latest>.
+`FPV-OPS-Android.apk` auf dem Handy öffnen und installieren. Android fragt beim ersten Mal, ob
+der Browser Apps installieren darf. Neue Fassungen installieren sich über die alte, die Daten
+bleiben.
+
+**Windows:** Wird bewusst nicht auf GitHub gebaut oder veröffentlicht. Einmalig auf dem eigenen PC:
+
+1. Node.js (LTS) von <https://nodejs.org> installieren.
+2. Das Repo herunterladen (*Code → Download ZIP*, entpacken) oder mit Git klonen.
+3. Im Ordner `apps\desktop` eine Eingabeaufforderung öffnen und ausführen:
+   ```
+   npm ci
+   npm run dist
+   ```
+4. Die fertige Datei liegt unter `apps\desktop\release\FPV-OPS-…-portable.exe`. Keine
+   Installation nötig, einfach starten. Sie ist nicht signiert, Windows SmartScreen warnt deshalb:
+   *Weitere Informationen → Trotzdem ausführen*.
+
+Zum Ausprobieren ohne `.exe` reicht `npm start` im selben Ordner. Die Daten liegen unter
+`%APPDATA%\FPV OPS`. Die `.exe` gehört nicht ins Repo; `apps/desktop/release/` ist in
+`.gitignore` eingetragen.
+
+Die Daten der Web-App im Browser ziehen nicht automatisch in die Apps um: einmal per Backup-Code
+übertragen.
+
+### Abgleich per WLAN
+
+Am Laptop *Backup → Abgleich mit Handy*: Das Programm zeigt einen QR-Code mit seiner Adresse und
+einem sechsstelligen Einmal-Code. In der Android-App *Backup → Mit Laptop abgleichen* und scannen,
+oder Adresse und Code eintippen. Beide Seiten führen zusammen, danach sind sie gleich.
+
+- Handy und Laptop müssen im selben Netz sein. Unterwegs den Laptop mit dem Hotspot des Handys
+  verbinden, Internet braucht es nicht.
+- Beim ersten Start fragt die Windows-Firewall nach dem Netzwerkzugriff: für private Netzwerke
+  erlauben.
+- Der Server läuft nur, solange das Abgleich-Fenster offen ist. Nach fünf falschen Codes stoppt er.
+- Im Browser geht das nicht: Eine Seite von github.io darf keine Geräte im Heimnetz ansprechen.
+
+### Signatur der APK
+
+Die APK wird mit einem Schlüssel signiert, der bewusst im Repo liegt
+(`apps/mobile/android/app/fpv-ops-sideload.jks`). Nur so installiert sich jede neue Fassung über die
+alte, ohne dass die Daten verloren gehen. Der Preis: Wer das Repo kennt, könnte eine APK mit
+derselben Signatur bauen. Deshalb APKs nur von der Release-Seite oben installieren. Für einen
+Store-Eintrag braucht es einen eigenen, geheimen Schlüssel.
+
 ## Aufbau
 
 Der geplante Ausbau (Android-App, Windows-Programm, Abgleich per WLAN, Werkstatt, Aufnahmen) steht
@@ -132,7 +181,14 @@ assets/js/core/catalog.js     Startkatalog der Werkstatt: Drohne, Teile, Preise 
 assets/js/views/workshop.js   Reiter Werkstatt: Drohnen, Wartungsplan, Logbuch, Betaflight-Stände,
                               Teilelager, Bestellliste
 assets/js/views/content.js    Eigene und angepasste Manöver, Checklisten und Links
+assets/js/views/sync.js       Abgleich per WLAN: QR-Code am Laptop, Scanner am Handy
 assets/vendor/leaflet/        Leaflet 1.9.4, lokal eingebunden (BSD-2, siehe LICENSE)
+assets/vendor/qrcode/         qrcode-generator 2.0.4 (MIT, Hinweis in der Datei)
+assets/vendor/jsqr/           jsQR 1.4.0 (Apache-2.0, siehe LICENSE)
+apps/desktop/                 Windows-Programm (Electron) mit Abgleich-Server
+apps/mobile/                  Android-App (Capacitor)
+tools/build-web.mjs           Kopiert die Web-App für die Apps
+.github/workflows/apps.yml    Baut die APK und legt sie auf die Release-Seite
 assets/icons/                 App-Icons
 ```
 
@@ -147,7 +203,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v7"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v8"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---
