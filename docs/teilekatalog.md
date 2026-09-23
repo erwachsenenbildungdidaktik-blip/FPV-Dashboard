@@ -17,6 +17,14 @@ Quelle und Datum. Preise ändern sich; sie sind ein Stand, kein Angebot.
 | Gewicht | 175 g ohne Akku | Händlerangaben, 23.09.2026 |
 | Props ab Werk | HQProp T3x3x3 | DeepSpaceFPV, 23.09.2026 |
 
+## Eigene Ausrüstung am Boden
+
+| Gerät | Detail | Preis | Quelle |
+|---|---|---|---|
+| RadioMaster TX16S Mk3 MAX (ELRS), Gold | Artikel 191002 | 319.00 CHF | Bestellung fpvracing.ch |
+| 2× Samsung INR18650-35E, 3500 mAh (Flat Top) | Artikel 021002, Akkus für die Funke | 2× 11.90 CHF | Bestellung fpvracing.ch |
+| Brille | offen | | |
+
 ## Ersatz- und Verschleissteile
 
 ### Props (bei fpvracing.ch als passend zum Seeker 3 geführt)
@@ -99,7 +107,7 @@ Alle Preise Stand 23.09.2026, Quelle: Konfigurator auf der Seeker-3-Seite von fp
 ## Noch zu klären
 
 - Genaue ELRS-Empfängerversion und Antenne
-- Eigene Funke und Brille (Modell), damit die passenden Ersatzakkus in die Bestellliste kommen
+- Eigene Brille (Modell)
 - Props: Preis pro Satz, Stückzahl pro Satz
 - Schraubensatz, Ersatzarm vorne, Kameraschutz
 - Motor einzeln als Ersatzteil
