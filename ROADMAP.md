@@ -43,4 +43,11 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
   Das können erst APK und .exe.
 - Der WLAN-Abgleich funktioniert nur zwischen APK und .exe, nicht aus dem Browser.
 - Keine Cloud-Synchronisation in Echtzeit. Die bräuchte einen Server mit Konto und Kosten.
-- Preise und Teiledaten werden nicht automatisch aus Shops gelesen.
+- Preise und Teiledaten werden nicht automatisch aus Shops gelesen. Als Nachschlagewerk für
+  Teilekombinationen dient RotorBuilds, verlinkt statt eingelesen.
+
+## Wissensquellen
+
+Im Reiter "Links" unter "Wissen und Technik": Oscar Liang (Grundlagen, Hardware), RotorBuilds
+(echte Builds und Teilelisten), Betaflight Wiki (massgeblich für die Konfiguration). Empfohlene
+Reihenfolge: verstehen bei Oscar Liang, vergleichen auf RotorBuilds, konfigurieren nach dem Wiki.

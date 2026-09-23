@@ -747,6 +747,51 @@ const LINKS = [
     ],
   },
   {
+    group: "Wissen und Technik",
+    items: [
+      {
+        title: "Oscar Liang",
+        url: "https://oscarliang.com/",
+        desc: "Die grosse FPV-Wissenssammlung: Komponenten, Builds, Funk, Video, Betaflight, Tuning, Fehlersuche. Erste Adresse, um etwas zu verstehen. Bei Hardware auf das Datum des Artikels achten.",
+      },
+      {
+        title: "Oscar Liang · Einsteiger-Guide",
+        url: "https://oscarliang.com/fpv-drone-guide/",
+        desc: "Der Gesamtüberblick über FPV, von der Funke bis zum Simulator.",
+      },
+      {
+        title: "Oscar Liang · Tutorials",
+        url: "https://oscarliang.com/tutorial/",
+        desc: "Alle Anleitungen nach Thema. Gut, wenn du eine konkrete Frage hast.",
+      },
+      {
+        title: "Oscar Liang · DJI O4 Pro einrichten",
+        url: "https://oscarliang.com/how-to-setup-dji-o4-pro/",
+        desc: "Einrichtung und empfohlene Kamera- und Übertragungseinstellungen für die O4 Air Unit Pro.",
+      },
+      {
+        title: "Oscar Liang · Build mit DJI O4 Pro",
+        url: "https://oscarliang.com/how-to-build-fpv-drone/",
+        desc: "Schritt-für-Schritt-Build mit der O4 Pro. Nützlich bei Reparaturen und beim Umbau.",
+      },
+      {
+        title: "RotorBuilds",
+        url: "https://rotorbuilds.com/builds",
+        desc: "Datenbank mit echten Builds, Teilelisten und Fotos. Zum Vergleichen, welche Komponenten zusammen funktionieren.",
+      },
+      {
+        title: "Betaflight Wiki",
+        url: "https://betaflight.com/docs/wiki",
+        desc: "Offizielle Dokumentation: Flugcontroller, Firmware, Failsafe, GPS Rescue, OSD. Massgeblich, wenn Artikel und Wiki sich widersprechen.",
+      },
+      {
+        title: "Betaflight · Setup Guide",
+        url: "https://betaflight.com/docs/wiki/getting-started/setup-guide",
+        desc: "Flugcontroller Schritt für Schritt von Grund auf konfigurieren.",
+      },
+    ],
+  },
+  {
     group: "Behörden und Nachweise",
     items: [
       {
