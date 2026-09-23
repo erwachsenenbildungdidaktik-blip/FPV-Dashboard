@@ -1,6 +1,7 @@
-# Baut aus der Web-App die Android-App (APK) und das Windows-Programm (.exe)
-# und legt beide auf die Release-Seite "apps-latest".
-name: Apps bauen
+# Baut aus der Web-App die Android-App (APK) und legt sie auf die Release-Seite
+# "apps-latest". Das Windows-Programm wird bewusst nicht hier gebaut und nicht
+# veröffentlicht; es entsteht lokal (siehe README).
+name: Android-App bauen
 
 on:
   push:
@@ -48,31 +49,8 @@ jobs:
           name: android
           path: FPV-OPS-Android.apk
 
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Abhängigkeiten
-        working-directory: apps/desktop
-        run: npm ci
-      - name: Programm bauen
-        working-directory: apps/desktop
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run dist
-      - name: Datei benennen
-        shell: bash
-        run: cp apps/desktop/release/*portable.exe FPV-OPS-Windows.exe
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: FPV-OPS-Windows.exe
-
   release:
-    needs: [android, windows]
+    needs: [android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,14 +67,11 @@ jobs:
         with:
           tag_name: apps-latest
           target_commitish: ${{ github.sha }}
-          name: FPV OPS Apps (neuester Stand)
+          name: FPV OPS Android-App (neuester Stand)
           prerelease: true
           files: |
             out/FPV-OPS-Android.apk
-            out/FPV-OPS-Windows.exe
           body: |
             Automatisch gebaut aus dem Stand ${{ github.sha }}.
 
             **Android:** `FPV-OPS-Android.apk` auf dem Handy herunterladen und öffnen. Beim ersten Mal fragt Android, ob der Browser Apps installieren darf: erlauben. Updates installieren sich über die alte Fassung, die Daten bleiben.
-
-            **Windows:** `FPV-OPS-Windows.exe` herunterladen und starten, keine Installation nötig. Das Programm ist nicht signiert, deshalb warnt Windows SmartScreen: *Weitere Informationen → Trotzdem ausführen*.

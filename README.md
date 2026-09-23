@@ -111,15 +111,28 @@ selbstverständlich weiterhin Netz.
 
 ## Android-App und Windows-Programm
 
-Beide werden bei jeder Änderung auf GitHub automatisch gebaut und liegen hier zum Download:
-<https://github.com/erwachsenenbildungdidaktik-blip/FPV-Dashboard/releases/tag/apps-latest>
+**Android:** Wird bei jeder Änderung auf GitHub automatisch gebaut und liegt hier zum Download:
+<https://github.com/erwachsenenbildungdidaktik-blip/FPV-Dashboard/releases/tag/apps-latest>.
+`FPV-OPS-Android.apk` auf dem Handy öffnen und installieren. Android fragt beim ersten Mal, ob
+der Browser Apps installieren darf. Neue Fassungen installieren sich über die alte, die Daten
+bleiben.
 
-- **Android:** `FPV-OPS-Android.apk` auf dem Handy öffnen und installieren. Android fragt beim
-  ersten Mal, ob der Browser Apps installieren darf. Neue Fassungen installieren sich über die alte,
-  die Daten bleiben.
-- **Windows:** `FPV-OPS-Windows.exe` starten, keine Installation. Das Programm ist nicht signiert,
-  Windows SmartScreen warnt deshalb: *Weitere Informationen → Trotzdem ausführen*. Die Daten liegen
-  unter `%APPDATA%\FPV OPS`.
+**Windows:** Wird bewusst nicht auf GitHub gebaut oder veröffentlicht. Einmalig auf dem eigenen PC:
+
+1. Node.js (LTS) von <https://nodejs.org> installieren.
+2. Das Repo herunterladen (*Code → Download ZIP*, entpacken) oder mit Git klonen.
+3. Im Ordner `apps\desktop` eine Eingabeaufforderung öffnen und ausführen:
+   ```
+   npm ci
+   npm run dist
+   ```
+4. Die fertige Datei liegt unter `apps\desktop\release\FPV-OPS-…-portable.exe`. Keine
+   Installation nötig, einfach starten. Sie ist nicht signiert, Windows SmartScreen warnt deshalb:
+   *Weitere Informationen → Trotzdem ausführen*.
+
+Zum Ausprobieren ohne `.exe` reicht `npm start` im selben Ordner. Die Daten liegen unter
+`%APPDATA%\FPV OPS`. Die `.exe` gehört nicht ins Repo; `apps/desktop/release/` ist in
+`.gitignore` eingetragen.
 
 Die Daten der Web-App im Browser ziehen nicht automatisch in die Apps um: einmal per Backup-Code
 übertragen.
@@ -175,7 +188,7 @@ assets/vendor/jsqr/           jsQR 1.4.0 (Apache-2.0, siehe LICENSE)
 apps/desktop/                 Windows-Programm (Electron) mit Abgleich-Server
 apps/mobile/                  Android-App (Capacitor)
 tools/build-web.mjs           Kopiert die Web-App für die Apps
-.github/workflows/apps.yml    Baut APK und .exe, legt sie auf die Release-Seite
+.github/workflows/apps.yml    Baut die APK und legt sie auf die Release-Seite
 assets/icons/                 App-Icons
 ```
 
