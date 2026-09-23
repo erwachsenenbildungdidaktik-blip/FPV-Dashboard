@@ -14,6 +14,7 @@
    ========================================================================== */
 
 import { uid, today } from "./util.js";
+import { SEED_DRONES, SEED_PARTS } from "./catalog.js";
 
 const DB_NAME = "fpv-ops";
 const LEGACY_KEY = "fpv-ops-v1";
@@ -21,7 +22,7 @@ const FALLBACK_KEY = "fpv-ops-v2";
 export const FORMAT = "fpv-ops";
 export const FORMAT_VERSION = 2;
 
-const LISTS = ["batteries", "flights", "spots", "cycleLog"];
+const LISTS = ["batteries", "flights", "spots", "cycleLog", "drones", "parts", "stockLog"];
 const MAPS = ["training", "checks"];
 
 /* ------------------------------------------------------------ Zustand */
@@ -47,6 +48,9 @@ export function blankState() {
     flights: [],
     spots: [],
     cycleLog: [],
+    drones: [],
+    parts: [],
+    stockLog: [],
     training: {},
     checks: {},
     settings: { lifespan: 200 },
@@ -67,9 +71,21 @@ export function autoCycles(state, batteryId) {
   return n;
 }
 
+// Lagerbestand genauso: Grundwert aus dem Teile-Dialog + alle Zu- und Abgänge.
+export function stockMoves(state, partId) {
+  let n = 0;
+  state.stockLog.forEach((m) => {
+    if (m.partId === partId) n += Number(m.delta) || 0;
+  });
+  return n;
+}
+
 export function derive(state) {
   state.batteries.forEach((b) => {
     b.cycles = (Number(b.cyclesBase) || 0) + autoCycles(state, b.id);
+  });
+  state.parts.forEach((p) => {
+    p.stock = Math.max(0, (Number(p.stockBase) || 0) + stockMoves(state, p.id));
   });
   return state;
 }
@@ -80,9 +96,13 @@ function key(c, id) {
   return c + "/" + id;
 }
 
-function stripBattery(b) {
-  const o = Object.assign({}, b);
-  delete o.cycles;
+// Abgeleitete Werte werden nie gespeichert.
+const DERIVED = { batteries: "cycles", parts: "stock" };
+
+function strip(c, x) {
+  if (!DERIVED[c]) return x;
+  const o = Object.assign({}, x);
+  delete o[DERIVED[c]];
   return o;
 }
 
@@ -90,7 +110,7 @@ function flatten(state) {
   const out = new Map();
   LISTS.forEach((c) => {
     (state[c] || []).forEach((x) => {
-      out.set(key(c, x.id), { c: c, id: x.id, data: c === "batteries" ? stripBattery(x) : x });
+      out.set(key(c, x.id), { c: c, id: x.id, data: strip(c, x) });
     });
   });
   MAPS.forEach((c) => {
@@ -103,7 +123,8 @@ function flatten(state) {
 }
 
 function unflatten(records) {
-  const s = { batteries: [], flights: [], spots: [], cycleLog: [], training: {}, checks: {}, settings: {} };
+  const s = { training: {}, checks: {}, settings: {} };
+  LISTS.forEach((c) => (s[c] = []));
   records.forEach((r) => {
     if (r.d || !r.data) return;
     if (LISTS.indexOf(r.c) !== -1) s[r.c].push(clone(r.data));
@@ -132,6 +153,9 @@ export function fromLegacy(p) {
     flights: Array.isArray(p.flights) ? p.flights : [],
     spots: Array.isArray(p.spots) ? p.spots : [],
     cycleLog: [],
+    drones: [],
+    parts: [],
+    stockLog: [],
     training: p.training && typeof p.training === "object" ? p.training : {},
     checks: p.checks && typeof p.checks === "object" ? p.checks : {},
     settings: Object.assign({ lifespan: 200 }, p.settings || {}),
@@ -347,9 +371,27 @@ export function open() {
         // wieder eingelesen.
         jobs.push(backend.setMeta("migrated", 1));
       }
+      jobs.push(write(seedCatalog()));
       return Promise.all(jobs);
     })
     .then(() => unflatten(recs));
+}
+
+// Legt Katalogteile und die Startdrohne an, falls es sie auf diesem Gerät noch
+// nie gab. Feste IDs und Zeitstempel 1: kein Doppel beim Abgleich, jede eigene
+// Änderung gewinnt, und ein gelöschter Eintrag kommt nicht zurück, weil seine
+// Löschmarkierung liegen bleibt.
+function seedCatalog() {
+  const list = [];
+  const add = (c, x) => {
+    const k = key(c, x.id);
+    if (recs.has(k)) return;
+    list.push({ k: k, c: c, id: x.id, u: 1, dev: "seed", data: clone(x) });
+  };
+  SEED_DRONES.forEach((d) => add("drones", d));
+  SEED_PARTS.forEach((p) => add("parts", p));
+  list.forEach(remember);
+  return list;
 }
 
 // Speichert, was sich seit dem letzten Aufruf geändert hat.
@@ -449,6 +491,7 @@ export function reset() {
   snap.clear();
   const list = seed(blankState(), 1);
   list.forEach(remember);
+  list.push.apply(list, seedCatalog());
   queue = queue.then(() => backend.clear());
   return write(list).then(() => unflatten(recs));
 }
