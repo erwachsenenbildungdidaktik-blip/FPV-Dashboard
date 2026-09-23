@@ -1,0 +1,18 @@
+const { chromium, devices } = require('./pw');
+let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
+(async () => { const b = await chromium.launch();
+  const ctx = await b.newContext({ viewport: { width: 1920, height: 1040 }, serviceWorkers: 'block' }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://localhost:8765/'); await p.waitForTimeout(700);
+  const fs = () => p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+  const base = await fs();
+  await p.click('[data-act=ui-bigger]'); await p.click('[data-act=ui-bigger]');
+  const up = await fs(); ok(Math.abs(up / base - 1.2) < 0.01, 'A+ zweimal = 120 % (' + base.toFixed(1) + ' → ' + up.toFixed(1) + ')');
+  await p.keyboard.press('Control+-'); ok(Math.abs(await fs() / base - 1.1) < 0.01, 'Strg − = 110 %');
+  await p.mouse.move(600, 500); await p.keyboard.down('Control'); await p.mouse.wheel(0, -100); await p.keyboard.up('Control'); await p.waitForTimeout(100);
+  ok(Math.abs(await fs() / base - 1.2) < 0.01, 'Strg + Mausrad hoch = 120 %');
+  await p.reload(); await p.waitForTimeout(700); ok(Math.abs(await fs() / base - 1.2) < 0.01, 'Nach Neuladen gemerkt');
+  await p.keyboard.press('Control+0'); ok(Math.abs(await fs() / base - 1) < 0.01, 'Strg 0 = 100 %');
+  const m = await (await b.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block' })).newPage(); await m.goto('http://localhost:8765/'); await m.waitForTimeout(600);
+  const ov = await m.evaluate(() => document.documentElement.scrollWidth > innerWidth); await m.click('[data-act=ui-bigger]');
+  ok(!ov && Math.abs(await m.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)) - 17.6) < 0.1, 'Handy: Knöpfe passen, A+ = 17.6 px');
+  ok(errs.length === 0, 'Keine JS-Fehler'); await b.close(); console.log(fails ? fails + ' FEHLER' : 'ALLES GRÜN'); })();
