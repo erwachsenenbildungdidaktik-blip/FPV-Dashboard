@@ -23,7 +23,8 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
 | 1 | APK (Capacitor), gebaut über GitHub Actions; .exe (Electron) nur lokal gebaut, nicht veröffentlicht. Abgleich per WLAN mit QR-Code: der Laptop zeigt den Code, das Handy scannt, beide gleichen ab. Unterwegs über den Hotspot des Handys. Datei und Backup-Code bleiben als Notfallweg. | in Arbeit |
 | 2a | Reiter Werkstatt: Drohnen statt fest eingetragenem Seeker 3, Teilelager mit Mindestbestand, Startkatalog aus `docs/teilekatalog.md`, Bestellliste (Teilen, CSV, Drucken/PDF) | erledigt (PR #3) |
 | 2b | Wartungs- und Reparaturlog, Betaflight-Konfiguration (`diff all`) pro Drohne, verbrauchte Teile beim Crash abbuchen, eigene Trainingseinheiten, bearbeitbare Checklisten und Links | erledigt |
-| 3 | Reiter "Aufnahmen": microSD auslesen, Videos in Galerie (APK) bzw. Ordner (.exe) speichern, Flug zuordnen, Hinweise und Links zu Schnittprogrammen (DaVinci Resolve, CapCut, Gyroflow, Shotcut, Kdenlive). Kein eigener Videoschnitt. | wartet auf `.srt`-Befund |
+| 3a | Reiter "Aufnahmen": Videos und .srt von der Karte wählen, Angaben (Zeit, Länge, Grösse, Quelle) speichern, automatisch dem Flug zuordnen, .srt auf GPS prüfen, Sichern über Teilen-Menü bzw. Download, Anleitung, Links zu Schnittprogrammen | erledigt |
+| 3b | Direkt in die Galerie speichern in der Android-App (natives Modul, braucht Test auf dem Gerät) | offen |
 | 4 | GPS-Flugweg auf der Karte, Höchstgeschwindigkeit und Höhe automatisch ins Flugbuch | wartet auf `.srt`-Befund |
 | später | Version für andere Piloten, Shop | offen |
 
@@ -31,7 +32,8 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
 
 - **Schreibt die O4 die GPS-Position des Flugcontrollers in eine Datei?** Belegt ist nur, dass
   das OSD Koordinaten anzeigen kann. Klärung: kurzer Flug mit GPS-Fix und Koordinaten im OSD,
-  dann Dateiliste der Air-Unit-Karte und die ersten Zeilen einer `.srt` ansehen.
+  dann im Reiter "Aufnahmen" Videos samt `.srt` einlesen. Die App meldet pro Datei, ob sie
+  Koordinaten enthält.
   - Koordinaten in der `.srt`: Etappe 4 ist einfach.
   - Keine Koordinaten: nur über OSD-Aufzeichnung der Brille oder Blackbox-Log, beides deutlich
     aufwendiger.
