@@ -11,3 +11,4 @@ apps/mobile/android/app/src/main/assets/public/
 apps/mobile/android/app/src/main/assets/capacitor.config.json
 apps/mobile/android/app/src/main/assets/capacitor.plugins.json
 apps/mobile/android/capacitor-cordova-android-plugins/
+/*.png
