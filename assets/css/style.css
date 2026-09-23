@@ -37,13 +37,20 @@
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  --gutter: 16px;
-  --maxw: 1180px;
+  --gutter: 1rem;
+  --maxw: 74rem;
 }
 
 * { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
+
+/* Grosse Bildschirme: Die Grundschrift wächst mit der Fensterbreite, und weil
+   Abstände, Raster und Dialoge in rem angegeben sind, wächst alles mit.
+   1000 px breit = 16 px, 1920 px ≈ 21 px, ab 2560 px 24 px. */
+@media (min-width: 1000px) {
+  html { font-size: clamp(16px, 0.55vw + 10.5px, 24px); }
+}
 
 body {
   margin: 0;
@@ -175,9 +182,9 @@ small { color: var(--dim); }
 .card--flush { padding: 0; overflow: hidden; }
 
 .grid { display: grid; gap: 12px; }
-.grid--kpi { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-.grid--cards { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-.grid--2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid--kpi { grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr)); }
+.grid--cards { grid-template-columns: repeat(auto-fill, minmax(min(16.25rem, 100%), 1fr)); }
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(18.75rem, 100%), 1fr)); }
 
 .kpi {
   background: var(--panel);
@@ -404,9 +411,9 @@ dialog {
   background: var(--bg-2);
   color: var(--text);
   padding: 0;
-  width: min(620px, calc(100vw - 24px));
-  max-height: min(86vh, 860px);
-  max-height: min(90dvh, 860px);
+  width: min(38.75rem, calc(100vw - 24px));
+  max-height: min(86vh, 54rem);
+  max-height: min(90dvh, 54rem);
   box-shadow: 0 24px 60px rgba(0,0,0,.6);
 }
 dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(3px); }
@@ -449,7 +456,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(3px); }
 
 /* -------------------------------------------------------------- Diagramme */
 /* Ohne Deckel skaliert das SVG auf Desktopbreite und die Beschriftung wird riesig. */
-.chart { width: 100%; max-width: 560px; height: auto; display: block; overflow: visible; }
+.chart { width: 100%; max-width: 35rem; height: auto; display: block; overflow: visible; }
 .chart text { font-family: var(--sans); fill: var(--dim); font-size: 8px; }
 
 /* ------------------------------------------------------------------ Links */
@@ -542,15 +549,15 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(3px); }
 .map {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 18.75rem;
   border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: hidden;
   background: #0d1013;
 }
-.map--sm { height: 210px; }
-.map--pick { height: 275px; }
-.map--lg { height: 360px; }
+.map--sm { height: 13rem; }
+.map--pick { height: 17rem; }
+.map--lg { height: 22.5rem; }
 
 /* Leaflet an das dunkle Thema anpassen */
 .leaflet-container {

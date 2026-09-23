@@ -5,7 +5,8 @@
 
 "use strict";
 
-const { app, BrowserWindow, protocol, net, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, protocol, net, ipcMain, shell } = require("electron");
+const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { createSyncServer } = require("./sync-server");
@@ -47,6 +48,54 @@ ipcMain.on("sync:reply", (_e, msg) => {
   else p.reject(new Error(msg.error || "Fehler"));
 });
 
+/* ---------------------------------------------------------------- Zoom
+   Die Seite wächst schon selbst mit der Fensterbreite. Wem das nicht reicht:
+   Strg + Mausrad oder Strg +/−/0. Der Wert wird gemerkt. */
+
+const SETTINGS = () => path.join(app.getPath("userData"), "desktop-settings.json");
+
+function readSettings() {
+  try {
+    return JSON.parse(fs.readFileSync(SETTINGS(), "utf8"));
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeSettings(patch) {
+  try {
+    fs.writeFileSync(SETTINGS(), JSON.stringify(Object.assign(readSettings(), patch)));
+  } catch (e) {}
+}
+
+function setZoom(f) {
+  if (!win) return;
+  const z = Math.round(Math.min(3, Math.max(0.5, f)) * 10) / 10;
+  win.webContents.setZoomFactor(z);
+  writeSettings({ zoom: z });
+}
+
+function buildMenu() {
+  const z = () => (win ? win.webContents.getZoomFactor() : 1);
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Ansicht",
+        submenu: [
+          { label: "Grösser", accelerator: "CmdOrCtrl+Plus", click: () => setZoom(z() + 0.1) },
+          { label: "Grösser", accelerator: "CmdOrCtrl+=", click: () => setZoom(z() + 0.1), visible: false },
+          { label: "Kleiner", accelerator: "CmdOrCtrl+-", click: () => setZoom(z() - 0.1) },
+          { label: "Normalgrösse", accelerator: "CmdOrCtrl+0", click: () => setZoom(1) },
+          { type: "separator" },
+          { role: "togglefullscreen", label: "Vollbild" },
+          { role: "reload", label: "Neu laden" },
+          { role: "toggleDevTools", label: "Entwicklerwerkzeuge" },
+        ],
+      },
+    ])
+  );
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1280,
@@ -77,6 +126,15 @@ function createWindow() {
     }
   });
 
+  win.webContents.on("did-finish-load", () => {
+    const zz = Number(readSettings().zoom);
+    if (zz) win.webContents.setZoomFactor(zz);
+  });
+  // Strg + Mausrad
+  win.webContents.on("zoom-changed", (_e, dir) => {
+    setZoom(win.webContents.getZoomFactor() + (dir === "in" ? 0.1 : -0.1));
+  });
+
   win.on("closed", () => {
     sync.stop();
     win = null;
@@ -93,6 +151,7 @@ app.whenReady().then(() => {
     if (!file.startsWith(WEB)) return new Response("nicht erlaubt", { status: 403 });
     return net.fetch(pathToFileURL(file).toString());
   });
+  buildMenu();
   createWindow();
 });
 

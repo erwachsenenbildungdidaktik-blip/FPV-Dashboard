@@ -204,7 +204,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v10"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v11"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---
