@@ -29,8 +29,23 @@ Zwei Ausnahmen, bei denen die App nach draussen spricht:
 Beides lässt sich abschalten, indem du in `index.html` die Zeilen mit `map.js` und `weather.js`
 entfernst. Die übrige App funktioniert dann unverändert weiter.
 
-Deshalb ist **Export** im Kopf der App keine Spielerei, sondern die Backup-Strategie. Die Datei
-lässt sich über **Import** auf jedem Gerät wieder einlesen, auch um Handy und Laptop abzugleichen.
+Deshalb ist **Backup** im Kopf der App keine Spielerei, sondern die Backup-Strategie. Es gibt zwei Wege:
+
+- **Backup-Code** (fürs Handy gedacht): Der ganze Datenstand wird zu einer einzigen, komprimierten
+  Textzeile (`FPV1.…`). *Code teilen* öffnet das Teilen-Menü, der Code landet etwa in Notizen oder
+  in einem Chat an dich selbst. Zum Wiederherstellen den Code ins Feld einfügen. Keine Datei, kein
+  Dateimanager. Wie lang der Code wird, hängt von der Datenmenge ab; mit vielen Flügen und
+  Fluggebieten werden es einige Kilobyte Text.
+- **Datei** als JSON, für den Laptop oder ein Archiv. Das Dateifeld nimmt auch einen Backup-Code
+  als Textdatei an.
+
+Beide Wege eignen sich auch, um Handy und Laptop abzugleichen. Eine automatische Synchronisation
+gibt es nicht, dafür bräuchte es einen Server.
+
+Zusätzlich bittet die App den Browser beim Start, ihren Speicher als dauerhaft zu behandeln
+(`navigator.storage.persist()`), damit er ihn nicht bei Platzmangel aufräumt. Ob der Browser
+zustimmt, entscheidet er selbst. Auf dem iPhone hilft vor allem die Installation auf dem
+Home-Bildschirm.
 
 Im privaten Modus und in manchen In-App-Browsern funktioniert der Speicher nicht. Die App zeigt in
 dem Fall oben eine Warnung an.
@@ -98,7 +113,7 @@ assets/icons/                 App-Icons
 - **Trainingsmanöver, Checklisten, Links, Akku-Startbestand** stehen in `assets/js/data.js`.
   Das ist reiner Text, dort kannst du gefahrlos ergänzen und umformulieren.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v2"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v3"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---
