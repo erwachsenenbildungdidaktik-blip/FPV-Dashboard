@@ -23,7 +23,7 @@ Quelle und Datum. Preise ändern sich; sie sind ein Stand, kein Angebot.
 |---|---|---|---|
 | RadioMaster TX16S Mk3 MAX (ELRS), Gold | Artikel 191002 | 319.00 CHF | Bestellung fpvracing.ch |
 | 2× Samsung INR18650-35E, 3500 mAh (Flat Top) | Artikel 021002, Akkus für die Funke | 2× 11.90 CHF | Bestellung fpvracing.ch |
-| Brille | offen | | |
+| DJI Goggles 3 | zur O4 Air Unit Pro kompatibel | Listenpreis 599.00 CHF | Angabe Besitzer; Preis Konfigurator fpvracing.ch |
 
 ## Ersatz- und Verschleissteile
 
@@ -107,7 +107,6 @@ Alle Preise Stand 23.09.2026, Quelle: Konfigurator auf der Seeker-3-Seite von fp
 ## Noch zu klären
 
 - Genaue ELRS-Empfängerversion und Antenne
-- Eigene Brille (Modell)
 - Props: Preis pro Satz, Stückzahl pro Satz
 - Schraubensatz, Ersatzarm vorne, Kameraschutz
 - Motor einzeln als Ersatzteil

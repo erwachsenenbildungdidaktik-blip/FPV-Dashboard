@@ -12,6 +12,7 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
 
 - Drohne: DeepSpace Seeker 3 mit DJI O4 Air Unit Pro (microSD in der Air Unit) und GPS-Modul
   (10. Generation) am Betaflight-Flugcontroller.
+- Brille: DJI Goggles 3. Funke: RadioMaster TX16S Mk3 MAX (ELRS).
 - Handy: Android (OPPO). Laptop: Windows, auf längeren Touren dabei.
 
 ## Etappen
@@ -33,7 +34,8 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
   - Koordinaten in der `.srt`: Etappe 4 ist einfach.
   - Keine Koordinaten: nur über OSD-Aufzeichnung der Brille oder Blackbox-Log, beides deutlich
     aufwendiger.
-- **Welche Brille?** Bestimmt, ob es eine zweite Karte mit Aufnahmen gibt.
+- **Was liegt auf der Karte der Goggles 3?** Zweite Quelle für Aufnahmen und womöglich für die
+  OSD-Aufzeichnung. Klärung zusammen mit der Air-Unit-Karte.
 - **Shop:** Nutzungsbedingungen von swisstopo und BAZL für kommerzielle Nutzung,
   Google-Play-Entwicklerkonto, Datenschutzerklärung, Haftung für Regelhinweise.
 
