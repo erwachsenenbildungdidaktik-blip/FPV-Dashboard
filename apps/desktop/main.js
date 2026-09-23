@@ -5,7 +5,7 @@
 
 "use strict";
 
-const { app, BrowserWindow, protocol, net, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, protocol, net, ipcMain, shell } = require("electron");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { createSyncServer } = require("./sync-server");
@@ -46,6 +46,24 @@ ipcMain.on("sync:reply", (_e, msg) => {
   if (msg.ok) p.resolve(msg.result);
   else p.reject(new Error(msg.error || "Fehler"));
 });
+
+/* Die Textgrösse regelt die App selbst (A− / A+, Strg + Mausrad, Strg +/−/0),
+   damit sie im Programm, im Browser und am Handy gleich funktioniert. */
+
+function buildMenu() {
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Ansicht",
+        submenu: [
+          { role: "togglefullscreen", label: "Vollbild" },
+          { role: "reload", label: "Neu laden" },
+          { role: "toggleDevTools", label: "Entwicklerwerkzeuge" },
+        ],
+      },
+    ])
+  );
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -93,6 +111,7 @@ app.whenReady().then(() => {
     if (!file.startsWith(WEB)) return new Response("nicht erlaubt", { status: 403 });
     return net.fetch(pathToFileURL(file).toString());
   });
+  buildMenu();
   createWindow();
 });
 
