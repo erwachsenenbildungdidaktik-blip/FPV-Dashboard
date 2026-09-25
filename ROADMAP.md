@@ -26,8 +26,31 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
 | 3a | Reiter "Aufnahmen": Videos und .srt von der Karte wählen, Angaben (Zeit, Länge, Grösse, Quelle) speichern, automatisch dem Flug zuordnen, .srt auf GPS prüfen, Sichern über Teilen-Menü bzw. Download, Anleitung, Links zu Schnittprogrammen | erledigt (PR #8) |
 | 3b | Direkt in die Galerie speichern in der Android-App (natives Modul, braucht Test auf dem Gerät) | offen |
 | 4 | GPS-Flugweg auf der Karte, Höchstgeschwindigkeit und Höhe automatisch ins Flugbuch | wartet auf `.srt`-Befund |
+| 4b | **Persönliche Angaben raus aus dem Code** (vor Etappe 5, Details unten) | nächster Schritt |
 | 5 | **Eigenbau** nach Zoll-Klasse, mit Bauvorlagen, Verträglichkeitsprüfung und Import einzelner RotorBuilds-Builds (Details unten) | nächster Schritt |
 | später | Version für andere Piloten, Shop | offen |
+
+## Etappe 4b: Persönliche Angaben raus aus dem Code (Entscheid Hugo, 25.09.2026)
+
+Anlass: Hugo will die APK weitergeben. Heute stehen Name, Fernpilot-Nummer, Betreibernummer,
+Versicherung und Policennummer fest in `assets/js/data.js` (`PILOT`) und damit im öffentlichen
+Repo, in der Web-App und in jeder APK.
+
+- `PILOT` aus `data.js` entfernen, ebenso andere fest eingetragene Angaben zu Hugo (Kopfzeile,
+  `craft`, Texte, die "Seeker 3" als Hugos Drohne voraussetzen).
+- **Beim ersten Start** fragt die App diese Angaben ab (Name, Fernpilot-Nummer mit Gültigkeit,
+  Betreibernummer, Versicherung, Police), alles optional und überspringbar. Danach jederzeit
+  unter "Meine Nachweise" bearbeitbar.
+- **Nur lokal speichern**, auf dem Gerät, nicht im Backup-Code und nicht im WLAN-Abgleich
+  (Hugos Vorgabe). Auf jedem Gerät also einmal eingeben.
+- Hugos bestehende Installationen: Beim ersten Start nach dem Update erscheint die Abfrage
+  ebenfalls; seine übrigen Daten bleiben unberührt.
+- Neue Nutzer starten ohne Hugos Gear: Startdrohne, Akkus, Katalog mit Hugos Bestand nicht mehr
+  automatisch anlegen. Stattdessen im Einstieg anbieten: "leer starten" oder "Beispiel
+  Seeker 3 laden". Bestehende Daten (feste IDs) nicht anfassen.
+- Tests: Ersteinrichtung, Überspringen, Bearbeiten, Angaben landen nicht im Backup-Code.
+- Die Angaben bleiben in der Git-Historie sichtbar. Sie daraus zu löschen hiesse, die Historie
+  umzuschreiben (Force-Push auf main) — nur auf ausdrücklichen Wunsch von Hugo.
 
 ## Etappe 5: Eigenbau (Umfang, festgelegt am 23.09.2026)
 

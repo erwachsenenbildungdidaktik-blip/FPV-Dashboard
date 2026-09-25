@@ -59,5 +59,6 @@ Laptop Windows. Einkauf meist bei fpvracing.ch.
   (`signAndEditExecutable=false`, darum ohne eingebettetes Icon).
 
 ## Offen
-Siehe `ROADMAP.md`: Etappe 5 Eigenbau (nächster Schritt, erste Klasse: **5 Zoll**), 3b Galerie in der APK, 4 GPS-Flugweg
+Siehe `ROADMAP.md`: **zuerst Etappe 4b** (persönliche Angaben aus dem Code, Abfrage beim ersten
+Start, nur lokal gespeichert), dann Etappe 5 Eigenbau (erste Klasse: **5 Zoll**), 3b Galerie in der APK, 4 GPS-Flugweg
 (wartet auf eine echte `.srt` von Hugos Karte), Shop-Version später.
