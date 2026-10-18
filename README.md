@@ -17,6 +17,10 @@ Im Reiter **Funke** liegt eine schematische Zeichnung der RadioMaster TX16S Mk3.
 Regler und jede Taste lässt sich antippen und belegen (Funktion, Kanal, was jede Stellung macht).
 Weitere Funken lassen sich mit eigenen Elementen erfassen. Die App warnt bei doppelt belegten
 Kanälen und wenn Arm nicht auf CH5 (AUX1) liegt, wie es ExpressLRS verlangt.
+Pro Funke lassen sich ein Link zur Bedienungsanleitung und Dateien (PDF, Bilder) hinterlegen. Ein
+Bild, etwa die Übersichtsseite aus dem Handbuch, ersetzt die Zeichnung; die Elemente setzt man
+einmal per Antippen aufs Bild. Dateien bleiben auf dem Gerät (eigene IndexedDB `fpv-ops-files`),
+abgeglichen werden nur Link, Dateiangaben und Positionen.
 
 Im Reiter **Betaflight** gibt es pro Drohne **Meine Rates** (Actual Rates mit Kurve, Übernahme
 aus einem gespeicherten `diff all`, CLI-Befehle zum Zurückspielen), **Modes** (die `aux`-Zeilen
@@ -219,7 +223,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v15"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v16"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---

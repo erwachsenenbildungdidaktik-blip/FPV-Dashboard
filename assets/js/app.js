@@ -1475,7 +1475,7 @@ import { createBetaflight } from "./views/betaflight.js";
     if (act.indexOf("ct-") === 0 && content.click(act, el)) return;
     if (act.indexOf("sync-") === 0 && sync.click(act, el)) return;
     if (act.indexOf("md-") === 0 && media.click(act, el)) return;
-    if (act.indexOf("rd-") === 0 && radio.click(act, el)) return;
+    if (act.indexOf("rd-") === 0 && radio.click(act, el, ev)) return;
     if (act.indexOf("bf-") === 0 && betaflight.click(act, el)) return;
     if (act.indexOf("lp-") === 0) {
       ev.preventDefault();
