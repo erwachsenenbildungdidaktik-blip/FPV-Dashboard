@@ -763,3 +763,31 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(3px); }
 .lp-charger__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.2rem, 1fr)); gap: 6px; margin-top: 6px; }
 .lp-charger__grid > div { display: flex; flex-direction: column; gap: 2px; }
 .lp-charger__grid strong { font-size: 0.85rem; color: var(--text); }
+
+/* ------------------------------------------------------------------ Funke */
+.rd-wrap { margin: 12px auto 4px; max-width: 34rem; }
+.rd-svg { width: 100%; height: auto; display: block; }
+.rd-body { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+.rd-screen { fill: rgba(43,217,255,.06); stroke: var(--line); }
+.rd-stick { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.rd-zone { fill: var(--dim); font-size: 8px; text-anchor: middle; dominant-baseline: middle; font-family: var(--mono); }
+.rd-ctl { cursor: pointer; outline: none; }
+.rd-ctl rect { fill: var(--bg-0); stroke: var(--muted); stroke-width: 1.2; transition: fill .12s, stroke .12s; }
+.rd-ctl text { fill: var(--text); font-size: 9px; font-weight: 700; text-anchor: middle; dominant-baseline: central; font-family: var(--mono); pointer-events: none; }
+.rd-ctl .rd-ch { fill: var(--accent); font-size: 8px; }
+.rd-ctl.is-on rect { fill: var(--accent-soft); stroke: var(--accent); }
+.rd-ctl:hover rect, .rd-ctl:focus rect { stroke: var(--cyan); }
+.rd-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 8px; }
+.rd-tile {
+  appearance: none; font: inherit; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  border-radius: var(--r-sm); padding: 8px 10px; display: flex; flex-direction: column; gap: 3px;
+}
+.rd-tile strong { font-size: 0.8rem; }
+.rd-tile span { font-size: 0.68rem; color: var(--dim); }
+.rd-tile.is-on { border-color: var(--accent-line); background: var(--accent-soft); }
+.rd-table tr { cursor: pointer; }
+.rd-table td:nth-child(3), .rd-table td:nth-child(4), .rd-table td:nth-child(2) { text-align: left; font-family: var(--sans); }
+.rc-posrow { display: grid; gap: 11px; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); }
+.rd-table th:nth-child(2), .rd-table th:nth-child(3), .rd-table th:nth-child(4) { text-align: left; }
+.rd-hint { margin-top: 8px; }

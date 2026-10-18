@@ -28,6 +28,9 @@ und Laptop gleichen sich ohne Cloud ab. Die Daten verlassen die eigenen Geräte 
 | 4 | GPS-Flugweg auf der Karte, Höchstgeschwindigkeit und Höhe automatisch ins Flugbuch | wartet auf `.srt`-Befund |
 | 4b | **Persönliche Angaben raus aus dem Code** (vor Etappe 5, Details unten) | nächster Schritt |
 | 5 | **Eigenbau** nach Zoll-Klasse, mit Bauvorlagen, Verträglichkeitsprüfung und Import einzelner RotorBuilds-Builds (Details unten) | nächster Schritt |
+| 6a | Reiter Akkus: LiPo-/LiHV-Wissen, Ladestrom-Rechner, Ladegerät-Einstellung pro Akku, Logbuch | erledigt (PR #15, #16) |
+| 6b | Reiter Funke: TX16S-Mk3-Zeichnung, Schalter/Tasten/Regler belegen, eigene Funken, ELRS-Prüfung (Arm auf CH5) | erledigt |
+| 6c | Reiter Betaflight: Meine Rates (Actual, Kurve, aus `diff all`, CLI kopieren), Modes-Abgleich mit der Funke, Stände | nächster Schritt |
 | später | Version für andere Piloten, Shop | offen |
 
 ## Etappe 4b: Persönliche Angaben raus aus dem Code (Entscheid Hugo, 25.09.2026)

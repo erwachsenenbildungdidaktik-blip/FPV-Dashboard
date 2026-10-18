@@ -13,6 +13,11 @@ unter Strom, einen Ladestrom-Rechner (1C, Leistungslimit des Ladegeräts, eigene
 80-%-Regel), Lagern, Ladegerät-Checkliste und Zustandscheck, mit Quellen. Pro Akku führt ein
 **Logbuch** Ruhespannung, Zelldelta, Innenwiderstand pro Zelle und nachgeladene mAh.
 
+Im Reiter **Funke** liegt eine schematische Zeichnung der RadioMaster TX16S Mk3. Jeder Schalter,
+Regler und jede Taste lässt sich antippen und belegen (Funktion, Kanal, was jede Stellung macht).
+Weitere Funken lassen sich mit eigenen Elementen erfassen. Die App warnt bei doppelt belegten
+Kanälen und wenn Arm nicht auf CH5 (AUX1) liegt, wie es ExpressLRS verlangt.
+
 Läuft ohne Server, ohne Konto, ohne Datenbank. Auf dem Handy als App installierbar.
 
 ---
@@ -210,7 +215,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v13"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v14"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---
