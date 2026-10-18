@@ -14,6 +14,7 @@ import { createSync } from "./views/sync.js";
 import { createMedia } from "./views/media.js";
 import { createLipo, chemOf, num } from "./views/lipo.js";
 import { createRadio } from "./views/radio.js";
+import { createBetaflight } from "./views/betaflight.js";
 
 (function () {
   "use strict";
@@ -84,6 +85,16 @@ import { createRadio } from "./views/radio.js";
     closeDialog: () => closeDialog(),
     toast: (m) => toast(m),
     rerender: () => renderAll(),
+  });
+
+  const betaflight = createBetaflight({
+    state: () => state,
+    save: save,
+    openDialog: (t, b, f) => openDialog(t, b, f),
+    closeDialog: () => closeDialog(),
+    toast: (m) => toast(m),
+    rerender: () => renderAll(),
+    activeDrone: () => workshop.activeDrone(),
   });
 
   function toast(msg) {
@@ -1409,10 +1420,12 @@ import { createRadio } from "./views/radio.js";
 
   /* -------------------------------------------------------------- Views */
 
-  const VIEWS = ["dashboard", "batteries", "workshop", "radio", "flights", "media", "training", "checklists", "links"];
+  const VIEWS = ["dashboard", "batteries", "workshop", "radio", "betaflight", "flights", "media", "training", "checklists", "links"];
 
   function showView(name) {
     if (VIEWS.indexOf(name) === -1) name = "dashboard";
+    // Betaflight vergleicht mit der Funke, darum beim Öffnen frisch aufbauen.
+    if (name === "betaflight" && state) betaflight.render();
     VIEWS.forEach((v) => {
       $("#view-" + v).classList.toggle("is-active", v === name);
       const t = $('.tab[data-view="' + v + '"]');
@@ -1429,6 +1442,7 @@ import { createRadio } from "./views/radio.js";
     $(".brand__sub").textContent = (d ? d.name : "Keine Drohne") + " · A1/A3";
     workshop.render();
     radio.render();
+    betaflight.render();
     media.render();
     renderDashboard();
     renderBatteries();
@@ -1462,6 +1476,7 @@ import { createRadio } from "./views/radio.js";
     if (act.indexOf("sync-") === 0 && sync.click(act, el)) return;
     if (act.indexOf("md-") === 0 && media.click(act, el)) return;
     if (act.indexOf("rd-") === 0 && radio.click(act, el)) return;
+    if (act.indexOf("bf-") === 0 && betaflight.click(act, el)) return;
     if (act.indexOf("lp-") === 0) {
       ev.preventDefault();
       if (lipo.click(act, el)) return;
@@ -1584,6 +1599,7 @@ import { createRadio } from "./views/radio.js";
     if (workshop.change(ev)) return;
     if (media.change(ev)) return;
     if (radio.change(ev)) return;
+    if (betaflight.change(ev)) return;
     if (ev.target.id === "f-crash") {
       $("#f-crashbox").hidden = !ev.target.checked;
       return;
@@ -1635,7 +1651,16 @@ import { createRadio } from "./views/radio.js";
   });
 
   document.addEventListener("input", function (ev) {
+    if (betaflight.input(ev)) return;
     lipo.input(ev);
+  });
+
+  // Rate-Kurven ablesen, mit Maus und Finger.
+  document.addEventListener("pointermove", function (ev) {
+    betaflight.pointer(ev);
+  });
+  document.addEventListener("pointerdown", function (ev) {
+    betaflight.pointer(ev);
   });
 
   dlg.addEventListener("click", function (ev) {

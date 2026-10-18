@@ -18,6 +18,10 @@ Regler und jede Taste lässt sich antippen und belegen (Funktion, Kanal, was jed
 Weitere Funken lassen sich mit eigenen Elementen erfassen. Die App warnt bei doppelt belegten
 Kanälen und wenn Arm nicht auf CH5 (AUX1) liegt, wie es ExpressLRS verlangt.
 
+Im Reiter **Betaflight** gibt es pro Drohne **Meine Rates** (Actual Rates mit Kurve, Übernahme
+aus einem gespeicherten `diff all`, CLI-Befehle zum Zurückspielen), **Modes** (die `aux`-Zeilen
+aus dem `diff all`, abgeglichen mit der Belegung der Funke) und die gespeicherten **Stände**.
+
 Läuft ohne Server, ohne Konto, ohne Datenbank. Auf dem Handy als App installierbar.
 
 ---
@@ -215,7 +219,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v14"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v15"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---
