@@ -7,6 +7,7 @@
    ========================================================================== */
 
 import { $, $$, uid, h } from "../core/util.js";
+import { putFile, getFile, delFile } from "../core/files.js";
 
 const KINDS = {
   sw2: { label: "Schalter, 2 Stellungen", pos: ["oben", "unten"] },
@@ -26,44 +27,48 @@ const FUNCTIONS = [
 const CHANNELS = [];
 for (let c = 5; c <= 16; c++) CHANNELS.push({ v: c, label: "CH" + c + " (AUX" + (c - 4) + ")" });
 
-/* TX16S Mk3, Mode 2, schematisch. Belegung der Schalter nach RC-SOAR und
-   RadioMaster: SA–SD vorne 3 Stellungen, SE und SG oben 3 Stellungen, SF 2,
-   SH Taster. Eine Händlerliste nennt SE/SF umgekehrt, darum ist die Art pro
-   Schalter änderbar. */
+/* TX16S Mk3, Mode 2, schematisch nach dem offiziellen Handbuch (Quick Start
+   Guide v1.8, Seite 1 und 4): vorne SA, SB, SC, SD, SE, SG mit 3 Stellungen,
+   S1/S2 als Drehregler, Trimmung T1–T6, 6 Pos Buttons unter den Knüppeln;
+   hinten SF mit 2 Stellungen, SH als Taster, Schieber LS und RS. */
 const W = 34, H = 22;
 const TEMPLATES = {
   "tx16s-mk3": {
     name: "RadioMaster TX16S Mk3",
+    // Offizielles Handbuch auf dem Server von RadioMaster (Version 1.8), von Hugo geliefert.
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX16SMK3_manual_1.8.pdf?v=1789608956",
     controls: [
-      { key: "SE", kind: "sw3", x: 40, y: 10, w: W, h: H, zone: "Oben" },
-      { key: "SF", kind: "sw2", x: 80, y: 10, w: W, h: H, zone: "Oben" },
-      { key: "SG", kind: "sw3", x: 286, y: 10, w: W, h: H, zone: "Oben" },
-      { key: "SH", kind: "btn", x: 326, y: 10, w: W, h: H, zone: "Oben" },
-      { key: "SA", kind: "sw3", x: 40, y: 52, w: W, h: H },
-      { key: "SB", kind: "sw3", x: 80, y: 52, w: W, h: H },
-      { key: "SC", kind: "sw3", x: 286, y: 52, w: W, h: H },
-      { key: "SD", kind: "sw3", x: 326, y: 52, w: W, h: H },
-      { key: "S1", kind: "pot", x: 128, y: 52, w: 28, h: 22 },
-      { key: "S2", kind: "pot", x: 244, y: 52, w: 28, h: 22 },
-      { key: "B1", label: "Taste 1", kind: "btn", x: 128, y: 82, w: 20, h: 14 },
-      { key: "B2", label: "Taste 2", kind: "btn", x: 153, y: 82, w: 20, h: 14 },
-      { key: "B3", label: "Taste 3", kind: "btn", x: 178, y: 82, w: 20, h: 14 },
-      { key: "B4", label: "Taste 4", kind: "btn", x: 203, y: 82, w: 20, h: 14 },
-      { key: "B5", label: "Taste 5", kind: "btn", x: 228, y: 82, w: 20, h: 14 },
-      { key: "B6", label: "Taste 6", kind: "btn", x: 253, y: 82, w: 20, h: 14 },
-      { key: "T3", kind: "trim", x: 32, y: 145, w: 14, h: 60 },
-      { key: "T1", kind: "trim", x: 65, y: 222, w: 60, h: 12 },
-      { key: "T2", kind: "trim", x: 354, y: 145, w: 14, h: 60 },
-      { key: "T4", kind: "trim", x: 275, y: 222, w: 60, h: 12 },
-      { key: "LS", kind: "slider", x: 60, y: 262, w: 80, h: 20, zone: "Rückseite" },
-      { key: "RS", kind: "slider", x: 260, y: 262, w: 80, h: 20, zone: "Rückseite" },
+      { key: "SE", kind: "sw3", x: 40, y: 8, w: W, h: H, zone: "Schulter" },
+      { key: "SF", kind: "sw2", x: 80, y: 8, w: W, h: H, zone: "Schulter" },
+      { key: "SG", kind: "sw3", x: 286, y: 8, w: W, h: H, zone: "Schulter" },
+      { key: "SH", kind: "btn", x: 326, y: 8, w: W, h: H, zone: "Schulter" },
+      { key: "SA", kind: "sw3", x: 40, y: 50, w: W, h: H },
+      { key: "SB", kind: "sw3", x: 80, y: 50, w: W, h: H },
+      { key: "SC", kind: "sw3", x: 286, y: 50, w: W, h: H },
+      { key: "SD", kind: "sw3", x: 326, y: 50, w: W, h: H },
+      { key: "S1", kind: "pot", x: 140, y: 50, w: 28, h: 22 },
+      { key: "S2", kind: "pot", x: 232, y: 50, w: 28, h: 22 },
+      { key: "T5", kind: "trim", x: 148, y: 82, w: 36, h: 11 },
+      { key: "T6", kind: "trim", x: 216, y: 82, w: 36, h: 11 },
+      { key: "T3", kind: "trim", x: 168, y: 110, w: 12, h: 48 },
+      { key: "T2", kind: "trim", x: 220, y: 110, w: 12, h: 48 },
+      { key: "T4", kind: "trim", x: 64, y: 196, w: 60, h: 12 },
+      { key: "T1", kind: "trim", x: 276, y: 196, w: 60, h: 12 },
+      { key: "B1", label: "6-Pos 1", kind: "btn", x: 134, y: 212, w: 18, h: 14 },
+      { key: "B2", label: "6-Pos 2", kind: "btn", x: 156, y: 212, w: 18, h: 14 },
+      { key: "B3", label: "6-Pos 3", kind: "btn", x: 178, y: 212, w: 18, h: 14 },
+      { key: "B4", label: "6-Pos 4", kind: "btn", x: 204, y: 212, w: 18, h: 14 },
+      { key: "B5", label: "6-Pos 5", kind: "btn", x: 226, y: 212, w: 18, h: 14 },
+      { key: "B6", label: "6-Pos 6", kind: "btn", x: 248, y: 212, w: 18, h: 14 },
+      { key: "LS", kind: "slider", x: 60, y: 330, w: 80, h: 20, zone: "Rückseite" },
+      { key: "RS", kind: "slider", x: 260, y: 330, w: 80, h: 20, zone: "Rückseite" },
     ],
   },
 };
 
 const SRC = [
+  ["RadioMaster: TX16S Mk3 Quick Start Guide v1.8 (Schalter, Tasten, Regler)", "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX16SMK3_manual_1.8.pdf?v=1789608956"],
   ["ExpressLRS: Switch Configs (Arm auf CH5 / AUX1)", "https://expresslrs.org/software/switch-config/"],
-  ["RC-SOAR: TX16S Mk3 Review (Schalter, Tasten, Regler)", "https://rc-soar.blogspot.com/2026/01/radiomaster-tx16s-mk3-review.html"],
   ["Oscar Liang: Schalter in EdgeTX einrichten (Mixes)", "https://oscarliang.com/setup-switch-mixes/"],
 ];
 
@@ -79,6 +84,82 @@ export function createRadio(ctx) {
     try {
       localStorage.setItem(LS, current || "");
     } catch (e) {}
+  }
+
+  // Bild oder Zeichnung, pro Gerät gemerkt.
+  let viewMode = "photo";
+  try {
+    viewMode = localStorage.getItem(LS + ":view") || "photo";
+  } catch (e) {}
+  let placing = false;
+  let placeKey = null;
+
+  /* --------------------------------------- Dateien (nur auf dem Gerät) */
+
+  const urls = {}; // id -> Objekt-URL, oder false wenn hier nicht vorhanden
+  const loading = {};
+
+  function fileUrl(id) {
+    if (id in urls) return urls[id];
+    if (!loading[id]) {
+      loading[id] = getFile(id)
+        .then((blob) => {
+          urls[id] = blob ? URL.createObjectURL(blob) : false;
+        })
+        .catch(() => {
+          urls[id] = false;
+        })
+        .then(render);
+    }
+    return null;
+  }
+
+  function addFiles(r, list, reuseId) {
+    const files = Array.prototype.slice.call(list || []);
+    if (!files.length) return Promise.resolve();
+    r.docs = r.docs || [];
+    return Promise.all(
+      files.map((f, i) => {
+        const id = (i === 0 && reuseId) || uid();
+        return putFile(id, f).then(() => {
+          if (urls[id]) URL.revokeObjectURL(urls[id]);
+          delete urls[id];
+          delete loading[id];
+          const meta = { id: id, name: f.name, type: f.type || "", size: f.size };
+          const at = r.docs.findIndex((d) => d.id === id);
+          if (at === -1) r.docs.push(meta);
+          else r.docs[at] = meta;
+          // Das erste Bild wird automatisch zum Bild der Funke.
+          if (!r.photoId && /^image\//.test(meta.type)) r.photoId = id;
+        });
+      })
+    ).then(() => {
+      ctx.save();
+      render();
+      ctx.toast(files.length === 1 ? "Datei gespeichert" : files.length + " Dateien gespeichert");
+    }, () => ctx.toast("Datei liess sich nicht speichern"));
+  }
+
+  function openDoc(d) {
+    getFile(d.id).then((blob) => {
+      if (!blob) return ctx.toast("Datei liegt nicht auf diesem Gerät");
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank");
+      if (!w) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = d.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    });
+  }
+
+  function size(n) {
+    n = Number(n) || 0;
+    return n > 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " kB";
   }
 
   /* ------------------------------------------------------------ Modell */
@@ -169,15 +250,20 @@ export function createRadio(ctx) {
       );
     };
     return (
-      '<svg class="rd-svg" viewBox="0 0 400 292" role="group" aria-label="' + h(tpl.name) + ' schematisch">' +
-      '<text class="rd-zone" x="200" y="24">oben (Schulter)</text>' +
-      '<rect class="rd-body" x="20" y="40" width="360" height="200" rx="34"></rect>' +
-      '<rect class="rd-screen" x="140" y="104" width="120" height="72" rx="6"></rect>' +
-      '<text class="rd-zone" x="200" y="143">Display</text>' +
-      '<circle class="rd-stick" cx="95" cy="175" r="40"></circle><circle class="rd-stick" cx="305" cy="175" r="40"></circle>' +
-      '<text class="rd-zone" x="95" y="172">Gas / Gier</text><text class="rd-zone" x="95" y="184">CH3 / CH4</text>' +
-      '<text class="rd-zone" x="305" y="172">Nick / Roll</text><text class="rd-zone" x="305" y="184">CH2 / CH1</text>' +
-      '<text class="rd-zone" x="200" y="257">Rückseite</text>' +
+      '<svg class="rd-svg" viewBox="0 0 400 360" role="group" aria-label="' + h(tpl.name) + ' schematisch">' +
+      '<text class="rd-zone" x="200" y="15">Schulter vorne: SE, SG</text><text class="rd-zone" x="200" y="27">hinten: SF, SH</text>' +
+      '<rect class="rd-body" x="20" y="40" width="360" height="270" rx="34"></rect>' +
+      '<circle class="rd-stick" cx="100" cy="140" r="42"></circle><circle class="rd-stick" cx="300" cy="140" r="42"></circle>' +
+      '<text class="rd-zone" x="100" y="136">Gas / Gier</text><text class="rd-zone" x="100" y="148">CH3 / CH4</text>' +
+      '<text class="rd-zone" x="300" y="136">Nick / Roll</text><text class="rd-zone" x="300" y="148">CH2 / CH1</text>' +
+      '<circle class="rd-fixed" cx="200" cy="134" r="9"></circle><text class="rd-zone" x="200" y="152">Power</text>' +
+      '<circle class="rd-fixed" cx="44" cy="216" r="8"></circle><text class="rd-zone" x="44" y="232">SYS</text>' +
+      '<circle class="rd-fixed" cx="356" cy="216" r="8"></circle><text class="rd-zone" x="356" y="232">MDL</text>' +
+      ["RTN", "PAGE>", "PAGE<", "TELE"].map((t, i) => '<rect class="rd-fixed" x="80" y="' + (240 + i * 15) + '" width="34" height="11" rx="5"></rect><text class="rd-zone" x="97" y="' + (246 + i * 15) + '">' + t + "</text>").join("") +
+      '<rect class="rd-screen" x="128" y="238" width="144" height="62" rx="6"></rect>' +
+      '<text class="rd-zone" x="200" y="269">Touchscreen</text>' +
+      '<rect class="rd-fixed" x="292" y="240" width="12" height="56" rx="5"></rect><text class="rd-zone" x="322" y="268">Rad</text>' +
+      '<text class="rd-zone" x="200" y="322">Rückseite</text>' +
       els.map(node).join("") +
       "</svg>"
     );
@@ -218,6 +304,83 @@ export function createRadio(ctx) {
     );
   }
 
+  function photoBlock(r) {
+    const url = fileUrl(r.photoId);
+    if (url === null) return '<div class="rd-photo rd-photo--loading">Bild wird geladen …</div>';
+    if (url === false)
+      return '<div class="lp-msg">Das Bild der Funke liegt auf einem anderen Gerät. Unten bei <em>Unterlagen</em> hier nochmals wählen, die Positionen bleiben erhalten.</div>';
+    const pins = r.pins || {};
+    const all = controls(r);
+    let out =
+      '<div class="rd-photo' + (placing ? " is-placing" : "") + '">' +
+      '<img src="' + url + '" alt="' + h(r.name) + '" data-act="rd-photo-tap" draggable="false">' +
+      all
+        .filter((c) => pins[c.key])
+        .map((c) => {
+          const m = mapOf(r, c.key);
+          const on = isMapped(m);
+          return (
+            '<button class="rd-pin' + (on ? " is-on" : "") + (placing && placeKey === c.key ? " is-sel" : "") +
+            '" style="left:' + pins[c.key].x + "%;top:" + pins[c.key].y + '%" data-act="rd-pin" data-key="' + h(c.key) + '" title="' + h(c.label) + '">' +
+            h(c.key.length > 3 ? c.label.slice(0, 3) : c.key.replace(/^B(\d)$/, "$1")) +
+            (on && m.ch ? "<small>" + m.ch + "</small>" : "") +
+            "</button>"
+          );
+        })
+        .join("") +
+      "</div>";
+    if (placing) {
+      out +=
+        '<div class="lp-msg rd-placebar">' + (placeKey ? "Tipp aufs Bild, wo <strong>" + h((ctlOf(r, placeKey) || {}).label || placeKey) + "</strong> sitzt." : "Element wählen, dann aufs Bild tippen.") + "</div>" +
+        '<div class="rd-chips">' +
+        all.map((c) => '<button class="rd-chip' + (pins[c.key] ? " is-done" : "") + (placeKey === c.key ? " is-sel" : "") + '" data-act="rd-place-pick" data-key="' + h(c.key) + '">' + h(c.label) + "</button>").join("") +
+        "</div>" +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' +
+        (placeKey && pins[placeKey] ? '<button class="btn btn--sm" data-act="rd-pin-del" data-key="' + h(placeKey) + '">Position entfernen</button>' : "") +
+        '<button class="btn btn--sm btn--primary" data-act="rd-place">Fertig</button></div>';
+    } else {
+      const open = all.filter((c) => !pins[c.key]).length;
+      out +=
+        '<small class="lp-small">Punkte antippen zum Belegen.' + (open ? " " + open + " Elemente sind noch nicht auf dem Bild platziert." : "") + "</small>" +
+        '<div style="margin-top:6px"><button class="btn btn--sm" data-act="rd-place">Elemente platzieren</button></div>';
+    }
+    return out;
+  }
+
+  function docsCard(r) {
+    const docs = r.docs || [];
+    return (
+      '<div class="card" style="margin-top:12px"><div class="label label--accent" style="margin-bottom:8px">Unterlagen</div>' +
+      (r.manualUrl
+        ? '<a class="btn btn--sm rd-manual" href="' + h(r.manualUrl) + '" target="_blank" rel="noopener">Bedienungsanleitung online öffnen</a>'
+        : '<div class="row__meta">Kein Link zur Bedienungsanleitung. Unter <em>Bearbeiten</em> eintragen.</div>') +
+      (docs.length
+        ? '<div class="rd-docs">' +
+          docs
+            .map((d) => {
+              const here = fileUrl(d.id);
+              const img = /^image\//.test(d.type);
+              return (
+                '<div class="row"><div class="row__main"><div class="row__title">' + h(d.name) + (r.photoId === d.id ? ' <span class="chip chip--accent">Bild der Funke</span>' : "") + "</div>" +
+                '<div class="row__meta">' + (img ? "Bild" : /pdf/.test(d.type) ? "PDF" : "Datei") + " · " + size(d.size) +
+                (here === false ? ' · <span style="color:var(--warn)">nicht auf diesem Gerät</span>' : "") + "</div></div>" +
+                '<div class="row__actions">' +
+                (here === false
+                  ? '<label class="btn btn--sm">Hier wählen<input type="file" hidden data-act="rd-relink" data-id="' + d.id + '" accept="' + (img ? "image/*" : "application/pdf,image/*") + '"></label>'
+                  : '<button class="btn btn--sm" data-act="rd-doc-open" data-id="' + d.id + '">Öffnen</button>' +
+                    (img && r.photoId !== d.id ? '<button class="btn btn--sm" data-act="rd-doc-photo" data-id="' + d.id + '">Als Bild</button>' : "")) +
+                '<button class="btn btn--sm btn--ghost" data-act="rd-doc-del" data-id="' + d.id + '">Entfernen</button></div></div>'
+              );
+            })
+            .join("") +
+          "</div>"
+        : "") +
+      '<label class="btn btn--sm" style="margin-top:10px">Datei hinzufügen (PDF oder Bild)<input type="file" hidden multiple data-act="rd-file" accept="application/pdf,image/*"></label>' +
+      '<small class="lp-small">Dateien bleiben auf diesem Gerät und gehen nicht in den Backup-Code oder den WLAN-Abgleich, nur der Link und die Positionen auf dem Bild. Auf dem zweiten Gerät die Datei einmal nochmals wählen.</small>' +
+      "</div>"
+    );
+  }
+
   function render() {
     const list = radios();
     const r = active();
@@ -245,7 +408,9 @@ export function createRadio(ctx) {
 
     const drones = S().drones.filter((d) => (r.droneIds || []).indexOf(d.id) !== -1);
     const hints = checks(r);
-    const extras = controls(r).filter((c) => c.x == null);
+    const showPhoto = !!r.photoId && (viewMode === "photo" || !TEMPLATES[r.template]);
+    // Auf dem Bild sind alle Elemente platzierbar, darunter nur die ohne Platz.
+    const extras = controls(r).filter((c) => (showPhoto ? !(r.pins || {})[c.key] : c.x == null));
 
     out +=
       '<div class="card" style="margin-bottom:12px">' +
@@ -257,12 +422,19 @@ export function createRadio(ctx) {
       '<button class="btn btn--sm" data-act="rd-copy">Als Text kopieren</button>' +
       '<button class="btn btn--sm" data-act="rd-edit" data-id="' + r.id + '">Bearbeiten</button></div></div>' +
       (r.note ? '<div class="row__meta">' + h(r.note) + "</div>" : "") +
-      (TEMPLATES[r.template]
-        ? '<div class="rd-wrap">' + svg(r) + "</div>" +
-          '<small class="lp-small">Schematisch, nicht massstabsgetreu. Belegte Elemente leuchten, die Zahl darunter ist der Kanal. Antippen zum Belegen.</small>'
+      (r.photoId && TEMPLATES[r.template]
+        ? '<div class="levels" role="tablist" style="margin-top:10px">' +
+          '<button class="level-tab" role="tab" data-act="rd-view" data-mode="photo" aria-selected="' + (showPhoto) + '">Bild</button>' +
+          '<button class="level-tab" role="tab" data-act="rd-view" data-mode="sketch" aria-selected="' + (!showPhoto) + '">Zeichnung</button></div>'
         : "") +
-      (extras.length || !TEMPLATES[r.template]
-        ? '<div class="label" style="margin:12px 0 6px">' + (TEMPLATES[r.template] ? "Weitere Elemente" : "Elemente") + "</div>" +
+      (showPhoto ? photoBlock(r) : "") +
+      (!showPhoto && TEMPLATES[r.template]
+        ? '<div class="rd-wrap">' + svg(r) + "</div>" +
+          '<small class="lp-small">Schematisch, nicht massstabsgetreu. Belegte Elemente leuchten, die Zahl darunter ist der Kanal. Antippen zum Belegen.' +
+          (r.photoId ? "" : " Eigenes Bild (z. B. aus der Bedienungsanleitung) unten bei <em>Unterlagen</em> hinzufügen.") + "</small>"
+        : "") +
+      (extras.length && !placing
+        ? '<div class="label" style="margin:12px 0 6px">' + (showPhoto ? "Nicht auf dem Bild" : TEMPLATES[r.template] ? "Weitere Elemente" : "Elemente") + "</div>" +
           '<div class="rd-tiles">' + extras.map((c) => tile(r, c)).join("") + "</div>"
         : "") +
       '<div style="margin-top:10px"><button class="btn btn--sm" data-act="rd-add">Element hinzufügen</button></div>' +
@@ -276,6 +448,7 @@ export function createRadio(ctx) {
       '<div class="card" style="margin-top:12px"><div class="label label--accent" style="margin-bottom:8px">Belegung nach Kanal</div>' +
       table(r) +
       '<small class="lp-small">Knüppel: CH1–CH4. Betaflight erwartet bei ExpressLRS meist die Reihenfolge AETR (Roll, Nick, Gas, Gier).</small></div>' +
+      docsCard(r) +
       '<div class="card" style="margin-top:12px"><div class="label label--accent" style="margin-bottom:8px">Quellen</div><ul class="lp-list">' +
       SRC.map((s) => '<li><a href="' + s[1] + '" target="_blank" rel="noopener">' + h(s[0]) + "</a></li>").join("") +
       "</ul></div>";
@@ -302,6 +475,8 @@ export function createRadio(ctx) {
             drones.map((d) => '<label class="lp-check"><input type="checkbox" class="rd-drone" value="' + d.id + '"' + ((v.droneIds || []).indexOf(d.id) !== -1 ? " checked" : "") + "> <span>" + h(d.name) + "</span></label>").join("") +
             "</div>"
           : "") +
+        '<label class="field"><span class="label">Link zur Bedienungsanleitung</span><input type="url" id="rd-url" value="' + h(v.manualUrl || "") + '" placeholder="https://…" inputmode="url"></label>' +
+        '<label class="field"><span class="label">Dateien (PDF oder Bild, z. B. die Seite mit allen Schaltern)</span><input type="file" id="rd-files" multiple accept="application/pdf,image/*"></label>' +
         '<label class="field"><span class="label">Notiz</span><textarea id="rd-note" placeholder="z. B. EdgeTX 2.11, ELRS-Modul intern">' + h(v.note) + "</textarea></label>",
       (r ? '<button type="button" class="btn btn--danger" data-act="rd-del" data-id="' + r.id + '">Löschen</button>' : "") +
         '<button type="button" class="btn btn--primary" data-act="rd-save" data-id="' + (r ? r.id : "") + '">Speichern</button>'
@@ -313,26 +488,35 @@ export function createRadio(ctx) {
       name: $("#rd-name").value.trim(),
       droneIds: $$(".rd-drone").filter((x) => x.checked).map((x) => x.value),
       note: $("#rd-note").value.trim(),
+      manualUrl: /^https?:\/\//i.test($("#rd-url").value.trim()) ? $("#rd-url").value.trim() : "",
     };
+    if ($("#rd-url").value.trim() && !rec.manualUrl) return ctx.toast("Link muss mit http:// oder https:// beginnen");
+    const files = $("#rd-files").files;
+    let target;
     if (id) {
-      Object.assign(radios().find((x) => x.id === id), rec, { name: rec.name || "Funke" });
+      target = radios().find((x) => x.id === id);
+      Object.assign(target, rec, { name: rec.name || "Funke" });
     } else {
       const tpl = $("#rd-tpl").value;
       const nr = Object.assign({ id: uid(), template: tpl, ctlEdit: {}, extra: [], map: {} }, rec);
       if (!nr.name) nr.name = TEMPLATES[tpl] ? TEMPLATES[tpl].name : "Meine Funke";
+      if (!nr.manualUrl && TEMPLATES[tpl] && TEMPLATES[tpl].manualUrl) nr.manualUrl = TEMPLATES[tpl].manualUrl;
       radios().push(nr);
       current = nr.id;
       remember();
+      target = nr;
     }
     ctx.save();
     ctx.closeDialog();
     render();
-    ctx.toast("Funke gespeichert");
+    if (files && files.length) addFiles(target, files);
+    else ctx.toast("Funke gespeichert");
   }
 
   function quick(tpl) {
     const nr = {
       id: uid(), template: tpl, name: TEMPLATES[tpl].name, ctlEdit: {}, extra: [], map: {},
+      manualUrl: TEMPLATES[tpl].manualUrl || "",
       droneIds: S().drones.length === 1 ? [S().drones[0].id] : [], note: "",
     };
     radios().push(nr);
@@ -432,9 +616,74 @@ export function createRadio(ctx) {
 
   /* -------------------------------------------------------------- API */
 
-  function click(act, el) {
+  function click(act, el, ev) {
     const r = active();
     switch (act) {
+      case "rd-view":
+        viewMode = el.dataset.mode;
+        placing = false;
+        try {
+          localStorage.setItem(LS + ":view", viewMode);
+        } catch (e) {}
+        render();
+        return true;
+      case "rd-place":
+        placing = !placing;
+        placeKey = placing ? (controls(r).find((c) => !(r.pins || {})[c.key]) || {}).key || null : null;
+        render();
+        return true;
+      case "rd-place-pick":
+        placeKey = el.dataset.key;
+        render();
+        return true;
+      case "rd-photo-tap": {
+        if (!placing || !placeKey || !ev) return true;
+        const box = el.getBoundingClientRect();
+        const x = Math.round(((ev.clientX - box.left) / box.width) * 1000) / 10;
+        const y = Math.round(((ev.clientY - box.top) / box.height) * 1000) / 10;
+        r.pins = r.pins || {};
+        r.pins[placeKey] = { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) };
+        ctx.save();
+        const next = controls(r).find((c) => !r.pins[c.key]);
+        placeKey = next ? next.key : null;
+        render();
+        return true;
+      }
+      case "rd-pin":
+        if (placing) {
+          placeKey = el.dataset.key;
+          render();
+        } else ctlDialog(el.dataset.key);
+        return true;
+      case "rd-pin-del":
+        if (r && r.pins) delete r.pins[el.dataset.key];
+        ctx.save();
+        render();
+        return true;
+      case "rd-doc-open": {
+        const d = (r.docs || []).find((x) => x.id === el.dataset.id);
+        if (d) openDoc(d);
+        return true;
+      }
+      case "rd-doc-photo":
+        r.photoId = el.dataset.id;
+        viewMode = "photo";
+        ctx.save();
+        render();
+        return true;
+      case "rd-doc-del":
+        if (window.confirm("Diese Datei entfernen?")) {
+          const id = el.dataset.id;
+          r.docs = (r.docs || []).filter((x) => x.id !== id);
+          if (r.photoId === id) r.photoId = "";
+          delFile(id).catch(() => {});
+          if (urls[id]) URL.revokeObjectURL(urls[id]);
+          delete urls[id];
+          delete loading[id];
+          ctx.save();
+          render();
+        }
+        return true;
       case "rd-new":
         radioDialog(null);
         return true;
@@ -454,6 +703,8 @@ export function createRadio(ctx) {
         return true;
       case "rd-del":
         if (window.confirm("Diese Funke mit ihrer ganzen Belegung löschen?")) {
+          const gone = radios().find((x) => x.id === el.dataset.id);
+          ((gone && gone.docs) || []).forEach((d) => delFile(d.id).catch(() => {}));
           S().radios = radios().filter((x) => x.id !== el.dataset.id);
           current = null;
           remember();
@@ -497,6 +748,11 @@ export function createRadio(ctx) {
   // Art geändert: Dialog mit passenden Stellungen neu aufbauen, Eingaben behalten.
   function change(ev) {
     const t = ev.target;
+    if (t && (t.dataset.act === "rd-file" || t.dataset.act === "rd-relink")) {
+      const r = active();
+      if (r) addFiles(r, t.files, t.dataset.act === "rd-relink" ? t.dataset.id : null);
+      return true;
+    }
     if (!t || t.dataset.act !== "rd-kind") return false;
     const keep = { fn: $("#rc-fn").value, ch: $("#rc-ch").value, note: $("#rc-note").value, pos: $$(".rc-pos").map((x) => x.value) };
     const label = $("#rc-label") ? $("#rc-label").value : null;

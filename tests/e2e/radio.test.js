@@ -27,7 +27,8 @@ async function map(p, key, fn, ch, pos) {
   await A.click('.tab[data-view=radio]');
   ok((await view(A)).includes('Noch keine Funke'), 'leer am Anfang');
   await A.click('[data-act=rd-quick][data-tpl=tx16s-mk3]'); await A.waitForTimeout(150);
-  ok(await A.locator('#view-radio .rd-ctl').count() === 22, '22 Elemente in der Zeichnung (SA–SH, S1/S2, 6 Tasten, T1–T4, LS/RS)');
+  ok(await A.locator('#view-radio a.rd-manual[href*="TX16SMK3_manual"]').count() === 1, 'Vorlage bringt Link zum TX16S-Mk3-Handbuch mit');
+  ok(await A.locator('#view-radio .rd-ctl').count() === 24, '24 Elemente wie im Handbuch (SA–SH, S1/S2, 6-Pos-Tasten, T1–T6, LS/RS)');
   ok((await view(A)).includes('Noch kein Element mit der Funktion Arm'), 'Hinweis: kein Arm');
 
   // SF als Arm auf CH5
@@ -85,6 +86,56 @@ async function map(p, key, fn, ch, pos) {
   ok(await A.locator('#view-radio [data-act=rd-pick]').count() === 2 && await A.locator('#view-radio .rd-svg').count() === 0, 'eigene Funke ohne Zeichnung, Umschalter da');
   await A.click('#view-radio [data-act=rd-pick]:has-text("TX16S")');
   ok(await A.locator('#view-radio .rd-svg').count() === 1, 'zurück zur TX16S');
+
+  // Bild der Funke, Link, Unterlagen
+  await A.click('#view-radio [data-act=rd-pick]:has-text("TX16S")');
+  const png = Buffer.from(await A.evaluate(() => { const c = document.createElement('canvas'); c.width = 400; c.height = 300; const g = c.getContext('2d'); g.fillStyle = '#ddd'; g.fillRect(0, 0, 400, 300); return c.toDataURL('image/png').split(',')[1]; }), 'base64');
+  await A.click('#view-radio [data-act=rd-edit]');
+  await A.fill('#rd-url', 'https://radiomasterrc.com/products/tx16s-mk3-radio-controller');
+  await A.setInputFiles('#rd-files', { name: 'tx16s-schalter.png', mimeType: 'image/png', buffer: png });
+  await A.click('[data-act=rd-save]'); await A.waitForTimeout(600);
+  ok(await A.locator('#view-radio .rd-photo img').count() === 1, 'Bild der Funke wird gezeigt');
+  ok(await A.locator('#view-radio a.rd-manual[href="https://radiomasterrc.com/products/tx16s-mk3-radio-controller"]').count() === 1, 'Link zur Bedienungsanleitung unter der Funke');
+  ok((await view(A)).includes('tx16s-schalter.png') && (await view(A)).includes('Bild der Funke'), 'Datei in den Unterlagen');
+  ok(await A.locator('#view-radio .rd-pin').count() === 0 && (await view(A)).includes('noch nicht auf dem Bild platziert'), 'noch keine Punkte');
+
+  // Platzieren: SE, dann SF
+  await A.click('[data-act=rd-place]');
+  const img = A.locator('#view-radio .rd-photo img'); let bb = await img.boundingBox();
+  await A.mouse.click(bb.x + bb.width * 0.25, bb.y + bb.height * 0.10); await A.waitForTimeout(150);
+  bb = await A.locator('#view-radio .rd-photo img').boundingBox();
+  await A.mouse.click(bb.x + bb.width * 0.35, bb.y + bb.height * 0.10); await A.waitForTimeout(150);
+  const pins = await A.evaluate(() => [...document.querySelectorAll('#view-radio .rd-pin')].map(p => [p.dataset.key, parseFloat(p.style.left), parseFloat(p.style.top)]));
+  const near = (k, x, y) => pins.some(p => p[0] === k && Math.abs(p[1] - x) <= 1 && Math.abs(p[2] - y) <= 1);
+  ok(pins.length === 2 && near('SE', 25, 10) && near('SF', 35, 10), 'SE und SF platziert: ' + JSON.stringify(pins));
+  await A.click('[data-act=rd-place]'); await A.waitForTimeout(100);
+  ok(await A.locator('#view-radio .rd-pin.is-on[data-key=SF]').count() === 1, 'SF (Arm) leuchtet auf dem Bild');
+  await A.click('#view-radio .rd-pin[data-key=SE]');
+  ok((await A.textContent('#dlg-title')).includes('SE'), 'Punkt öffnet Belegung');
+  await A.click('#dlg-foot [data-act=dlg-close]');
+  await A.click('#view-radio [data-act=rd-view][data-mode=sketch]');
+  ok(await A.locator('#view-radio .rd-svg').count() === 1 && await A.locator('#view-radio .rd-photo').count() === 0, 'Umschalten auf Zeichnung');
+  await A.click('#view-radio [data-act=rd-view][data-mode=photo]');
+
+  // PDF dazu
+  await A.setInputFiles('#view-radio input[data-act=rd-file]', { name: 'TX16S-MK3-Manual.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
+  await A.waitForTimeout(500);
+  ok((await view(A)).includes('TX16S-MK3-Manual.pdf') && (await view(A)).includes('PDF'), 'PDF in den Unterlagen');
+
+  // Ungültiger Link
+  await A.click('#view-radio [data-act=rd-edit]'); await A.fill('#rd-url', 'radiomaster'); await A.click('[data-act=rd-save]'); await A.waitForTimeout(150);
+  ok((await A.textContent('#toast')).includes('http') && await A.locator('#dlg[open]').count() === 1, 'Link ohne http wird abgelehnt, Dialog bleibt offen');
+  await A.click('#dlg-foot [data-act=dlg-close]');
+  ok(await A.locator('#view-radio a.rd-manual').count() === 1, 'alter Link bleibt');
+
+  // Gerät B: Positionen kommen an, Dateien nicht
+  await putCode(B, await getCode(A));
+  await B.click('.tab[data-view=radio]'); await B.click('#view-radio [data-act=rd-pick]:has-text("TX16S")'); await B.waitForTimeout(300);
+  let bv = await view(B);
+  ok(bv.includes('liegt auf einem anderen Gerät') && bv.includes('nicht auf diesem Gerät') && await B.locator('#view-radio a.rd-manual').count() === 1, 'B: Link da, Dateien fehlen mit Hinweis');
+  await B.setInputFiles('#view-radio input[data-act=rd-relink][accept="image/*"]', { name: 'tx16s-schalter.png', mimeType: 'image/png', buffer: png });
+  await B.waitForTimeout(600);
+  ok(await B.locator('#view-radio .rd-photo img').count() === 1 && await B.locator('#view-radio .rd-pin').count() === 2, 'B: Bild nochmals gewählt, Punkte sitzen');
 
   // Layout
   for (const vp of [{ width: 412, height: 915 }, { width: 915, height: 412 }, { width: 1280, height: 800 }]) {

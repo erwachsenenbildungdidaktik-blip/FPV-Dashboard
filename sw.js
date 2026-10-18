@@ -5,7 +5,7 @@
    Aktualisierungen, ohne offline im Regen zu stehen.
    Bei jeder Änderung an den App-Dateien die VERSION erhöhen. */
 
-const VERSION = "fpv-ops-v15";
+const VERSION = "fpv-ops-v16";
 const ASSETS = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const ASSETS = [
   "./assets/js/core/store.js",
   "./assets/js/core/backup.js",
   "./assets/js/core/catalog.js",
+  "./assets/js/core/files.js",
   "./assets/js/views/workshop.js",
   "./assets/js/views/content.js",
   "./assets/js/views/sync.js",
