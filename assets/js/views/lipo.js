@@ -9,9 +9,10 @@
 import { $, $$, uid, h, today, deDate } from "../core/util.js";
 
 // Pro Zelle, Presets aus dem ISDT-X16-Handbuch.
+// Landen: Oscar Liang (im Flug, unter Last). Für LiHV gibt es dazu keine Quelle.
 export const CHEM = {
-  lipo: { label: "LiPo", nominal: 3.7, full: 4.2, storage: 3.8, cutoff: 3.3 },
-  lihv: { label: "LiHV", nominal: 3.8, full: 4.35, storage: 3.85, cutoff: 3.4 },
+  lipo: { label: "LiPo", nominal: 3.7, full: 4.2, storage: 3.8, cutoff: 3.3, land: [3.5, 3.6] },
+  lihv: { label: "LiHV", nominal: 3.8, full: 4.35, storage: 3.85, cutoff: 3.4, land: null },
 };
 
 // ISDT F160: 40 W Ladeleistung und höchstens 5 A pro Kanal.
@@ -112,22 +113,29 @@ export function createLipo(ctx) {
 
   function voltTable(chemKey) {
     const c = CHEM[chemKey];
+    const land = (n) => (c.land ? num(c.land[0] * n, 1) + "–" + num(c.land[1] * n, 1) : "—");
     let rows = "";
     for (let s = 1; s <= 6; s++) {
       rows +=
         "<tr" + (s === 4 ? ' class="is-mine"' : "") + "><td>" + s + "S</td>" +
-        "<td>" + num(c.nominal * s, 2) + "</td><td>" + num(c.full * s, 2) + "</td>" +
-        "<td>" + num(c.storage * s, 2) + "</td><td>" + num(c.cutoff * s, 2) + "</td></tr>";
+        "<td>" + num(c.full * s, 2) + "</td><td>" + num(c.storage * s, 2) + "</td>" +
+        (c.land ? "<td>" + land(s) + "</td>" : "") + "</tr>";
     }
+    const tile = (cls, label, val, hint) =>
+      '<div class="lp-volt ' + cls + '"><span class="label">' + label + '</span><strong class="mono">' + val +
+      "</strong><small>" + hint + "</small></div>";
     return (
       '<div class="lp-volts">' +
-      [["Nennspannung", c.nominal], ["Voll geladen", c.full], ["Lagerspannung", c.storage], ["Entladeziel Ladegerät", c.cutoff]]
-        .map((x) => '<div class="lp-volt"><span class="label">' + x[0] + '</span><strong class="mono">' + num(x[1], 2) + " V</strong></div>")
-        .join("") +
+      tile("lp-volt--full", "Voll", num(c.full, 2) + " V", "Ladegerät stoppt hier") +
+      tile("lp-volt--store", "Lagern", num(c.storage, 2) + " V", "wenn er ein paar Tage liegt") +
+      tile("lp-volt--land", "Landen", c.land ? num(c.land[0], 1) + "–" + num(c.land[1], 1) + " V" : "?", c.land ? "im Flug, Anzeige in der Brille" : "Herstellerangabe prüfen") +
       "</div>" +
-      '<div class="lp-scroll"><table class="lp-table"><thead><tr><th>Zellen</th><th>Nenn</th><th>Voll</th><th>Lager</th><th>Entladeziel</th></tr></thead><tbody>' +
+      '<div class="lp-scroll"><table class="lp-table"><thead><tr><th>Akku</th><th>Voll</th><th>Lagern</th>' +
+      (c.land ? "<th>Landen</th>" : "") + "</tr></thead><tbody>" +
       rows + "</tbody></table></div>" +
-      '<small class="lp-small">Gesamtspannung = Zellwert × Zellenzahl (S). Hervorgehoben: 4S. Werte pro Zelle aus der ISDT-Tabelle (X16-Handbuch).</small>'
+      '<small class="lp-small">Alle Werte in Volt, pro Zelle mal Zellenzahl (S). Nennspannung ' + num(c.nominal, 2) +
+      " V pro Zelle steht auf dem Etikett (4S = " + num(c.nominal * 4, 1) + " V). Werte aus der ISDT-Tabelle (X16-Handbuch)" +
+      (c.land ? ", Landen nach Oscar Liang" : "") + ".</small>"
     );
   }
 
@@ -194,10 +202,10 @@ export function createLipo(ctx) {
     return (
       '<div class="grid grid--2">' +
       card(
-        "1 · Die vier wichtigen Spannungen (pro Zelle)",
+        "1 · Die drei Zahlen, die du brauchst (pro Zelle)",
         voltTable("lipo") +
-          '<div class="lp-msg lp-msg--warn">Die ' + num(c.cutoff, 2) + " V sind das Ziel, wenn das <em>Ladegerät</em> entlädt. " +
-          "Keine Landespannung: Oscar Liang empfiehlt zu landen, wenn der Akku im Flug 3,5 bis 3,6 V pro Zelle zeigt.</div>" +
+          '<div class="lp-msg lp-msg--ok">Entladen auf Lagerspannung ist gut. Tiefer bringt nichts. Unter 3,0 V pro Zelle unter Last nimmt der Akku Schaden.</div>' +
+          '<small class="lp-small">Das Ladegerät kann bis ' + num(c.cutoff, 2) + " V pro Zelle entladen. Das brauchst du nur, um die Kapazität zu messen.</small>" +
           '<small class="lp-small">Akku mit „HV“ auf dem Etikett? Dann gilt der Reiter <a href="#" data-act="lp-tab" data-tab="lihv">LiHV</a>.</small>'
       ) +
       card(
@@ -260,7 +268,7 @@ export function createLipo(ctx) {
       '<div class="banner"><strong>Nie einen normalen LiPo im LiHV-Modus laden.</strong> Er würde auf ' + num(c.full, 2) +
       " V pro Zelle geladen, das ist überladen. LiHV gilt nur für Akkus, die als LiHV / HV verkauft werden.</div>" +
       '<div class="grid grid--2">' +
-      card("Spannungen LiHV (pro Zelle)", voltTable("lihv")) +
+      card("Die Zahlen für LiHV (pro Zelle)", voltTable("lihv")) +
       card(
         "Was anders ist",
         '<ul class="lp-list">' +
@@ -303,6 +311,30 @@ export function createLipo(ctx) {
     if (ir.length) bits.push("IR " + ir.join(" / ") + " mΩ");
     if (e.recharged) bits.push("nachgeladen " + e.recharged + " mAh");
     return bits.join(" · ");
+  }
+
+  // "So stellst du das Ladegerät ein", fertig für diesen Akku.
+  function chargerBlock(b) {
+    const c = chemOf(b);
+    const cells = Number(b.cells) || 0;
+    const ah = (Number(b.mah) || 0) / 1000;
+    if (!cells || !ah) return "";
+    // Auf 0,1 A abgerundet, so lässt es sich am Ladegerät einstellen und bleibt unter 1C.
+    const amps = Math.floor(ah * 10 + 1e-9) / 10 || ah;
+    const item = (k, v) => '<div><span class="label">' + k + '</span><strong class="mono">' + v + "</strong></div>";
+    return (
+      '<div class="lp-charger">' +
+      '<div class="label label--accent">Ladegerät einstellen</div>' +
+      '<div class="lp-charger__grid">' +
+      item("Typ", c.label) +
+      item("Zellen", cells + "S") +
+      item("Strom", num(amps, 1) + " A") +
+      item("Voll", num(c.full * cells, 2) + " V") +
+      item("Lagern", num(c.storage * cells, 2) + " V") +
+      "</div>" +
+      '<small class="lp-small" style="margin-top:4px">Strom = höchstens 1C (' + num(ah, 2) + " A). Immer mit Balancerstecker, nie unbeaufsichtigt. Steht auf dem Akku etwas anderes, gilt das.</small>" +
+      "</div>"
+    );
   }
 
   // Kurzinfo für die Akkukarte im Bestand.
@@ -469,6 +501,7 @@ export function createLipo(ctx) {
     tabs: tabs,
     render: render,
     cardInfo: cardInfo,
+    chargerBlock: chargerBlock,
     click: click,
     input: input,
   };
