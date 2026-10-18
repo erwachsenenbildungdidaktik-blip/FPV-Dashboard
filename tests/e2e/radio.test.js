@@ -62,6 +62,13 @@ async function map(p, key, fn, ch, pos) {
   ok(await A.locator('.rc-pos').count() === 2 && await A.inputValue('#rc-fn') === 'Beeper', 'Art umgestellt, Eingabe bleibt');
   await A.selectOption('#rc-ch', '8'); await A.click('[data-act=rd-ctl-save]'); await A.waitForTimeout(150);
 
+  // Abbrechen legt nichts an
+  const tilesBefore = await A.locator('#view-radio .rd-tile').count();
+  await A.click('[data-act=rd-add]');
+  ok((await A.textContent('#dlg-title')) === 'Neues Element' && await A.locator('[data-act=rd-ctl-del]').count() === 0, 'Dialog für neues Element ohne Entfernen-Knopf');
+  await A.click('#dlg-foot [data-act=dlg-close]'); await A.waitForTimeout(100);
+  ok(await A.locator('#view-radio .rd-tile').count() === tilesBefore, 'Abbrechen legt kein Element an');
+
   // Eigenes Element
   await A.click('[data-act=rd-add]');
   await A.fill('#rc-label', 'SI hinten'); await A.selectOption('#rc-kind', 'btn'); await A.waitForTimeout(80);

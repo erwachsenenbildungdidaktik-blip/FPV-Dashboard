@@ -184,7 +184,11 @@ export function createRadio(ctx) {
     return base.concat(extra).filter((c) => !c.hidden);
   }
 
+  // Ein neues Element existiert erst nach "Speichern", bis dahin nur hier.
+  let pending = null;
+
   function ctlOf(r, key) {
+    if (pending && pending.key === key) return Object.assign({ custom: true }, pending);
     return controls(r).find((c) => c.key === key) || null;
   }
 
@@ -531,13 +535,14 @@ export function createRadio(ctx) {
     const r = active();
     const c = r && ctlOf(r, key);
     if (!c) return;
+    const isNew = !!(pending && pending.key === key);
     const m = mapOf(r, key) || { fn: "", ch: "", pos: [], note: "" };
     const kind = kindOverride || c.kind;
     const pos = KINDS[kind].pos;
     ctx.openDialog(
-      c.label + (c.label !== c.key ? " (" + c.key + ")" : ""),
+      isNew ? "Neues Element" : c.label + (c.label !== c.key ? " (" + c.key + ")" : ""),
       '<div class="form-row">' +
-        (c.custom ? '<label class="field"><span class="label">Name</span><input type="text" id="rc-label" value="' + h(c.label) + '"></label>' : "") +
+        (c.custom ? '<label class="field"><span class="label">Name</span><input type="text" id="rc-label" value="' + h(c.label) + '" placeholder="z. B. SI hinten"></label>' : "") +
         '<label class="field"><span class="label">Art</span><select id="rc-kind" data-act="rd-kind" data-key="' + h(key) + '">' +
         Object.keys(KINDS).map((k) => '<option value="' + k + '"' + (k === kind ? " selected" : "") + ">" + KINDS[k].label + "</option>").join("") +
         "</select></label>" +
@@ -550,7 +555,7 @@ export function createRadio(ctx) {
         pos.map((p, i) => '<label class="field"><span class="label">' + h(p) + '</span><input type="text" class="rc-pos" value="' + h((m.pos || [])[i] || "") + '" placeholder="' + (kind === "sw2" ? (i ? "z. B. armed" : "z. B. disarmed") : "") + '"></label>').join("") +
         "</div>" +
         '<label class="field"><span class="label">Notiz</span><textarea id="rc-note">' + h(m.note || "") + "</textarea></label>",
-      (c.custom ? '<button type="button" class="btn btn--danger" data-act="rd-ctl-del" data-key="' + h(key) + '">Element entfernen</button>' : "") +
+      (c.custom && !isNew ? '<button type="button" class="btn btn--danger" data-act="rd-ctl-del" data-key="' + h(key) + '">Element entfernen</button>' : "") +
         (isMapped(mapOf(r, key)) ? '<button type="button" class="btn" data-act="rd-ctl-clear" data-key="' + h(key) + '">Leeren</button>' : "") +
         '<button type="button" class="btn btn--primary" data-act="rd-ctl-save" data-key="' + h(key) + '">Speichern</button>'
     );
@@ -562,7 +567,13 @@ export function createRadio(ctx) {
     if (!c) return;
     const kind = $("#rc-kind").value;
     if (c.custom) {
-      const x = r.extra.find((e) => e.key === key);
+      r.extra = r.extra || [];
+      let x = r.extra.find((e) => e.key === key);
+      if (!x) {
+        x = { key: key, label: "Neues Element", kind: kind };
+        r.extra.push(x);
+        pending = null;
+      }
       x.kind = kind;
       if ($("#rc-label")) x.label = $("#rc-label").value.trim() || x.label;
     } else {
@@ -588,12 +599,8 @@ export function createRadio(ctx) {
   function addControl() {
     const r = active();
     if (!r) return;
-    r.extra = r.extra || [];
-    const key = "X" + uid().slice(-5);
-    r.extra.push({ key: key, label: "Neues Element", kind: "sw2" });
-    ctx.save();
-    render();
-    ctlDialog(key);
+    pending = { key: "X" + uid().slice(-5), label: "", kind: "sw2" };
+    ctlDialog(pending.key);
   }
 
   function copyText() {
