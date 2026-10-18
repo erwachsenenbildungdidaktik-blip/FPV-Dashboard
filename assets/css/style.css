@@ -728,3 +728,30 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(3px); }
 .wx--ok { color: var(--ok); }
 .wx--warn { color: var(--warn); }
 .wx--bad { color: var(--bad); }
+
+/* ------------------------------------------------------------ Akku-Wissen */
+.lp-card p { font-size: 0.8rem; color: var(--muted); margin: 0 0 8px; line-height: 1.55; }
+.lp-small { display: block; margin-top: 8px; font-size: 0.68rem; color: var(--dim); line-height: 1.5; }
+.lp-list { margin: 0; padding-left: 1.1rem; font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+.lp-list li { margin-bottom: 5px; }
+.lp-list a, .lp-small a { color: var(--accent); }
+.lp-volts { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 8px; margin-bottom: 10px; }
+.lp-volt, .lp-out > div, .lp-example > div {
+  border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.lp-volt strong, .lp-out strong, .lp-example strong { font-size: 1rem; color: var(--text); }
+.lp-example small { font-size: 0.68rem; color: var(--dim); }
+.lp-out, .lp-example { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 8px; margin: 4px 0 8px; }
+.lp-scroll { overflow-x: auto; }
+.lp-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.74rem; }
+.lp-table th { text-align: right; font-family: inherit; font-size: 0.62rem; color: var(--dim); font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--line); text-transform: uppercase; }
+.lp-table td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--line); color: var(--muted); }
+.lp-table th:first-child, .lp-table td:first-child { text-align: left; }
+.lp-table tr.is-mine td { color: var(--text); background: var(--accent-soft); font-weight: 600; }
+.lp-msg { font-size: 0.76rem; line-height: 1.5; border-radius: var(--r-sm); padding: 8px 10px; margin-top: 8px; border: 1px solid var(--line); }
+.lp-msg--ok { color: var(--ok); border-color: rgba(70,209,127,.3); background: rgba(70,209,127,.08); }
+.lp-msg--warn { color: var(--warn); border-color: rgba(255,197,61,.3); background: rgba(255,197,61,.08); }
+.lp-checks { display: flex; flex-direction: column; gap: 7px; }
+.lp-check { display: flex; gap: 8px; align-items: flex-start; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
+.lp-check input { margin-top: 3px; flex: none; }

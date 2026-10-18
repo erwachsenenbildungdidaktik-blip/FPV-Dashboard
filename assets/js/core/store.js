@@ -25,7 +25,7 @@ export const FORMAT_VERSION = 2;
 const LISTS = [
   "batteries", "flights", "spots", "cycleLog",
   "drones", "parts", "stockLog", "maintenance", "maintTasks", "bfConfigs",
-  "mvCustom", "clCustom", "linkCustom", "media",
+  "mvCustom", "clCustom", "linkCustom", "media", "batLog",
 ];
 // Anpassungen an eingebauten Inhalten, nach deren ID abgelegt.
 const MAPS = ["training", "checks", "mvEdit", "clEdit", "linkHidden"];
@@ -53,6 +53,7 @@ export function blankState() {
     flights: [],
     spots: [],
     cycleLog: [],
+    batLog: [],
     drones: [],
     parts: [],
     stockLog: [],
