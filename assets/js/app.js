@@ -546,6 +546,7 @@ import { createLipo, chemOf, num } from "./views/lipo.js";
             ? '<div style="margin-top:8px">' + weightChip(takeoffWeight(b)) + "</div>"
             : "") +
           (b.notes ? '<div class="row__meta">' + h(b.notes) + "</div>" : "") +
+          lipo.chargerBlock(b) +
           lipo.cardInfo(b) +
           '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">' +
           '<button class="btn btn--sm" data-act="bat-cycle" data-id="' + b.id + '">+1 Zyklus</button>' +

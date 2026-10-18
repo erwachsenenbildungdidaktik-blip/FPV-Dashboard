@@ -23,9 +23,12 @@ async function putCode(p, code) { await p.click('.topbar [data-act=backup]'); aw
   // LiPo-Seite und Rechner mit dem Beispiel 750 mAh, 4S, 40 W
   await A.click('#view-batteries [data-act=lp-tab][data-tab=lipo]');
   const row4 = await txt(A, '.lp-table tr.is-mine');
-  ok(/4S/.test(row4) && row4.includes('14,80') && row4.includes('16,80') && row4.includes('15,20') && row4.includes('13,20'), '4S-Zeile: 14,80 / 16,80 / 15,20 / 13,20 (' + row4 + ')');
+  ok(/4S/.test(row4) && row4.includes('16,80') && row4.includes('15,20') && row4.includes('14,0–14,4') && !row4.includes('13,20'), '4S-Zeile: voll 16,80 / lagern 15,20 / landen 14,0–14,4 (' + row4 + ')');
+  const tiles = await txt(A, '.lp-volts');
+  ok(tiles.includes('4,20 V') && tiles.includes('3,80 V') && tiles.includes('3,5–3,6 V') && !tiles.includes('3,30'), 'Kacheln: Voll, Lagern, Landen, kein 3,30 V');
   ok(await A.locator('.lp-table tbody tr').count() === 6, 'Tabelle 1S bis 6S');
   ok(await txt(A, '#lp-r-1c') === '0,75 A', '1C = 0,75 A');
+
   ok(await txt(A, '#lp-r-full') === '16,80 V' && await txt(A, '#lp-r-storage') === '15,20 V', 'Voll 16,80 V, Lager 15,20 V');
   ok(await txt(A, '#lp-r-80') === '600 mAh', '80 % = 600 mAh');
   const lim = await txt(A, '#lp-r-limit');
@@ -54,6 +57,8 @@ async function putCode(p, code) { await p.click('.topbar [data-act=backup]'); aw
   // Logbuch
   await A.click('#view-batteries [data-act=lp-tab][data-tab=stock]');
   const card1 = A.locator('#view-batteries .card', { hasText: 'R-Line #1' });
+  const chg = (await card1.locator('.lp-charger').textContent()).replace(/\s+/g, ' ');
+  ok(chg.includes('LiPo') && chg.includes('4S') && chg.includes('0,7 A') && chg.includes('16,80 V') && chg.includes('15,20 V'), 'Ladegerät-Block: LiPo 4S 0,7 A 16,80 V 15,20 V (' + chg + ')');
   await card1.locator('[data-act=lp-log]').click();
   ok((await A.textContent('#dlg')).includes('Noch keine Messung'), 'Logbuch leer');
   await A.click('#dlg [data-act=lp-log-new]');
@@ -79,7 +84,8 @@ async function putCode(p, code) { await p.click('.topbar [data-act=backup]'); aw
   await A.locator('#view-batteries .card', { hasText: 'R-Line #4' }).locator('[data-act=bat-edit]').click();
   await A.selectOption('#f-chem', 'lihv'); await A.fill('#f-bought', '2026-03-01');
   await A.click('[data-act=bat-save]'); await A.waitForTimeout(200);
-  ok((await A.locator('#view-batteries .card', { hasText: 'R-Line #4' }).textContent()).includes('LiHV'), 'Akku als LiHV markiert');
+  const c4 = await A.locator('#view-batteries .card', { hasText: 'R-Line #4' }).textContent();
+  ok(c4.includes('LiHV') && c4.includes('17,40 V') && c4.includes('15,40 V'), 'Akku als LiHV markiert, Ladegerät-Block mit LiHV-Werten');
 
   // Abgleich: Messungen kommen auf Gerät B an
   const B = await device(b, 'B'); await B.goto(URL); await ready(B);
