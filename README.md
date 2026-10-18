@@ -7,6 +7,12 @@ Manövern, Start- und Landecheck­listen sowie die Links, die vor jedem Flug geb
 Dazu eine Karte mit den Drohnen-Einschränkungszonen des BAZL, auf der Fluggebiete samt
 Betriebsradius gesetzt werden, und ein Wetterabruf für den aktuellen Standort.
 
+Im Reiter **Akkus** gibt es neben dem Bestand die Seiten **LiPo** und **LiHV**: die vier wichtigen
+Spannungen pro Zelle (ISDT-Tabelle) als Tabelle für 1S bis 6S, Ruhespannung gegenüber Spannung
+unter Strom, einen Ladestrom-Rechner (1C, Leistungslimit des Ladegeräts, eigenes Preset,
+80-%-Regel), Lagern, Ladegerät-Checkliste und Zustandscheck, mit Quellen. Pro Akku führt ein
+**Logbuch** Ruhespannung, Zelldelta, Innenwiderstand pro Zelle und nachgeladene mAh.
+
 Läuft ohne Server, ohne Konto, ohne Datenbank. Auf dem Handy als App installierbar.
 
 ---
@@ -204,7 +210,7 @@ assets/icons/                 App-Icons
   `data.js` nicht umbenennen, sonst verlieren Anpassungen und Übungsstände ihren Bezug.
 - **Neue JS-Dateien** zusätzlich in `sw.js` unter `ASSETS` eintragen, sonst fehlen sie offline.
 - **Aussehen** in `assets/css/style.css`, ganz oben unter `:root` stehen alle Farben.
-- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v11"` hochzählen, sonst
+- **Nach jeder Änderung** in `sw.js` die Zeile `const VERSION = "fpv-ops-v12"` hochzählen, sonst
   liefert der Service Worker auf schon installierten Geräten hartnäckig die alte Fassung aus.
 
 ---

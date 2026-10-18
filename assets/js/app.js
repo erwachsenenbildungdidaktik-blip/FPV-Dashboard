@@ -12,6 +12,7 @@ import { createWorkshop } from "./views/workshop.js";
 import { createContent } from "./views/content.js";
 import { createSync } from "./views/sync.js";
 import { createMedia } from "./views/media.js";
+import { createLipo, chemOf, num } from "./views/lipo.js";
 
 (function () {
   "use strict";
@@ -64,6 +65,15 @@ import { createMedia } from "./views/media.js";
     rerender: () => renderAll(),
     activeDrone: () => workshop.activeDrone(),
     flightDrone: (f) => workshop.flightDrone(f),
+  });
+
+  const lipo = createLipo({
+    state: () => state,
+    save: save,
+    openDialog: (t, b, f) => openDialog(t, b, f),
+    closeDialog: () => closeDialog(),
+    toast: (m) => toast(m),
+    rerender: () => renderAll(),
   });
 
   function toast(msg) {
@@ -483,7 +493,12 @@ import { createMedia } from "./views/media.js";
   /* ------------------------------------------------------------- Akkus */
 
   function renderBatteries() {
+    if (lipo.tab() !== "stock") {
+      $("#view-batteries").innerHTML = lipo.render();
+      return;
+    }
     let out =
+      lipo.tabs() +
       '<div class="section-head"><span class="label label--accent">Akkubestand</span>' +
       '<span class="section-head__rule"></span>' +
       '<button class="btn btn--sm btn--primary" data-act="bat-new">Akku erfassen</button></div>';
@@ -516,7 +531,7 @@ import { createMedia } from "./views/media.js";
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">' +
           "<div><h3>" + h(b.label) + "</h3>" +
           '<div class="row__meta">' + h(b.brand || "") + " · " + h(b.mah) + " mAh · " +
-          h(b.cells) + "S" + (b.crate ? " · " + h(b.crate) + "C" : "") + "</div></div>" +
+          h(b.cells) + "S" + (b.crate ? " · " + h(b.crate) + "C" : "") + " · " + chemOf(b).label + "</div></div>" +
           '<span class="chip ' + st.chip + '">' + st.label + "</span></div>" +
           '<div style="margin:13px 0 5px;display:flex;justify-content:space-between">' +
           '<span class="label">Zyklen</span>' +
@@ -524,14 +539,17 @@ import { createMedia } from "./views/media.js";
           '<div class="bar"><div class="bar__fill ' + hp.cls + '" style="width:' + hp.pct + '%"></div></div>' +
           (warn
             ? '<div class="row__meta" style="color:var(--warn);margin-top:8px">Seit ' + d +
-              " Tagen voll geladen. Auf Lagerspannung bringen.</div>"
+              " Tagen voll geladen. Auf Lagerspannung bringen" +
+              (Number(b.cells) ? " (" + num(chemOf(b).storage * b.cells, 2) + " V)" : "") + ".</div>"
             : '<div class="row__meta" style="margin-top:8px">Status seit ' + deDate(b.statusSince) + "</div>") +
           (takeoffWeight(b) != null
             ? '<div style="margin-top:8px">' + weightChip(takeoffWeight(b)) + "</div>"
             : "") +
           (b.notes ? '<div class="row__meta">' + h(b.notes) + "</div>" : "") +
+          lipo.cardInfo(b) +
           '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">' +
           '<button class="btn btn--sm" data-act="bat-cycle" data-id="' + b.id + '">+1 Zyklus</button>' +
+          '<button class="btn btn--sm" data-act="lp-log" data-id="' + b.id + '">Logbuch</button>' +
           '<select data-act="bat-status" data-id="' + b.id + '" style="width:auto;flex:1;min-width:110px;font-size:.72rem;padding:5px 24px 5px 8px">' +
           Object.keys(BATTERY_STATUS)
             .map(
@@ -885,7 +903,7 @@ import { createMedia } from "./views/media.js";
 
   function batteryDialog(id) {
     const b = id ? state.batteries.find((x) => x.id === id) : null;
-    const v = b || { label: "", brand: "", mah: 750, cells: 4, crate: 95, cycles: 0, weight: "", notes: "" };
+    const v = b || { label: "", brand: "", mah: 750, cells: 4, crate: 95, cycles: 0, weight: "", notes: "", chem: "lipo", bought: "" };
     openDialog(
       b ? "Akku bearbeiten" : "Akku erfassen",
       '<label class="field"><span class="label">Bezeichnung</span><input type="text" id="f-label" value="' +
@@ -899,7 +917,13 @@ import { createMedia } from "./views/media.js";
         '<label class="field"><span class="label">Zyklen</span><input type="number" id="f-cycles" value="' + h(v.cycles) + '"></label>' +
         '<label class="field"><span class="label">Gewicht g</span><input type="number" id="f-weight" min="0" step="1" inputmode="numeric" value="' + h(v.weight || "") + '"></label>' +
         "</div>" +
-        '<label class="field"><span class="label">Notizen</span><textarea id="f-notes" placeholder="Auffälligkeiten, Puffing, Innenwiderstand">' +
+        '<div class="form-row">' +
+        '<label class="field"><span class="label">Typ</span><select id="f-chem">' +
+        '<option value="lipo"' + (v.chem !== "lihv" ? " selected" : "") + ">LiPo</option>" +
+        '<option value="lihv"' + (v.chem === "lihv" ? " selected" : "") + ">LiHV</option></select></label>" +
+        '<label class="field"><span class="label">Kaufdatum</span><input type="date" id="f-bought" value="' + h(v.bought || "") + '"></label>' +
+        "</div>" +
+        '<label class="field"><span class="label">Notizen</span><textarea id="f-notes" placeholder="Auffälligkeiten, Puffing. Messungen gehören ins Logbuch.">' +
         h(v.notes) + "</textarea></label>",
       (b ? '<button type="button" class="btn btn--danger" data-act="bat-del" data-id="' + b.id + '">Löschen</button>' : "") +
         '<button type="button" class="btn btn--primary" data-act="bat-save" data-id="' + (b ? b.id : "") + '">Speichern</button>'
@@ -914,6 +938,8 @@ import { createMedia } from "./views/media.js";
       cells: Number($("#f-cells").value) || 0,
       crate: Number($("#f-crate").value) || 0,
       weight: Math.max(0, Number($("#f-weight").value) || 0) || "",
+      chem: $("#f-chem").value === "lihv" ? "lihv" : "lipo",
+      bought: $("#f-bought").value || "",
       notes: $("#f-notes").value.trim(),
     };
     // Eingegeben wird der Gesamtstand, gespeichert der Anteil, der nicht aus
@@ -1423,6 +1449,10 @@ import { createMedia } from "./views/media.js";
     if (act.indexOf("ct-") === 0 && content.click(act, el)) return;
     if (act.indexOf("sync-") === 0 && sync.click(act, el)) return;
     if (act.indexOf("md-") === 0 && media.click(act, el)) return;
+    if (act.indexOf("lp-") === 0) {
+      ev.preventDefault();
+      if (lipo.click(act, el)) return;
+    }
 
     switch (act) {
       case "dlg-close":
@@ -1437,6 +1467,7 @@ import { createMedia } from "./views/media.js";
       case "bat-del":
         if (window.confirm("Diesen Akku löschen? Erfasste Flüge bleiben bestehen.")) {
           state.batteries = state.batteries.filter((x) => x.id !== id);
+          state.batLog = state.batLog.filter((x) => x.batteryId !== id);
           save();
           closeDialog();
           renderBatteries();
@@ -1583,6 +1614,10 @@ import { createMedia } from "./views/media.js";
       importJson(ev.target.files[0]);
       ev.target.value = "";
     }
+  });
+
+  document.addEventListener("input", function (ev) {
+    lipo.input(ev);
   });
 
   dlg.addEventListener("click", function (ev) {
