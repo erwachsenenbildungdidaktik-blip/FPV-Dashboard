@@ -38,6 +38,10 @@ rateprofile 1
 
 set rates_type = BETAFLIGHT
 
+battery_profile 0
+
+set vbat_warning_cell_voltage = 345
+
 # restore original rateprofile selection
 rateprofile 0
 
@@ -56,8 +60,10 @@ save`;
       half: m.actualRate(0.5, { rc: 10, srate: 80, expo: 20 }),
       neg: m.actualRate(-0.5, { rc: 10, srate: 80, expo: 20 }),
       low: m.maxRate({ rc: 20, srate: 10, expo: 0 }),
+      bp: Object.keys(m.parseDiff('rateprofile 1\nset roll_srate = 80\nbattery_profile 0\nset vbat_warning_cell_voltage = 345\n').profiles['1'].set),
     };
   });
+  ok(f.bp.join() === 'roll_srate', 'battery_profile beendet den Rate-Profil-Block');
   ok(Math.abs(f.def - 670) < 1e-6, 'Standard 70/670/0 → max 670 °/s');
   ok(Math.abs(f.half - 192.1875) < 1e-6 && Math.abs(f.neg + 192.1875) < 1e-6, 'Knüppel 50 %, 100/800/0,20 → 192,19 °/s, symmetrisch');
   ok(Math.abs(f.low - 200) < 1e-6, 'Max unter Center → Center gilt (200 °/s)');

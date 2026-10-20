@@ -79,7 +79,7 @@ export function parseDiff(text) {
       cur = out.profiles[m[1]] = out.profiles[m[1]] || { slot: Number(m[1]), set: {} };
       return;
     }
-    if (/^profile\s+\d+$/i.test(line) || /^(save|batch end)$/i.test(line)) {
+    if (/^(profile|battery_profile)\s+\d+$/i.test(line) || /^(save|batch end)$/i.test(line)) {
       cur = null;
       return;
     }
