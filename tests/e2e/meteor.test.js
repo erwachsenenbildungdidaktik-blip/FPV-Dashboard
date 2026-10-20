@@ -67,6 +67,11 @@ const tab = (p, t) => p.click('.tab[data-view=' + t + ']');
   await tab(A, 'betaflight');
   ok(await A.locator('#view-betaflight select[data-act=bf-drone] option').count() === 2, 'Betaflight: Drohnen-Auswahl');
 
+  // Einrichtungs-Checkliste
+  await tab(A, 'checklists');
+  const cl = await A.textContent('#view-checklists');
+  ok(cl.includes('Einrichtung Meteor65 Pro II O4') && cl.includes('ELRS gebunden') && cl.includes('Failsafe getestet'), 'Checkliste Einrichtung Meteor65');
+
   ok(errs.length === 0, 'keine JS-Fehler ' + JSON.stringify(errs));
   await b.close();
   console.log(fails ? fails + ' FEHLER' : 'ALLES GRÜN');
