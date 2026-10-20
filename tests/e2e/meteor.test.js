@@ -15,7 +15,7 @@ const tab = (p, t) => p.click('.tab[data-view=' + t + ']');
   await tab(A, 'workshop');
   const card = A.locator('#view-workshop .card', { hasText: 'Meteor65 Pro II' }).first();
   const ct = await card.textContent();
-  ok(ct.includes('DJI O4 Wide') && ct.includes('Matrix 1S') && ct.includes('GF 1409') && ct.includes('22000 oder 25000 KV'), 'Meteor65 mit Datenblatt, Widerspruch beim KV sichtbar');
+  ok(ct.includes('DJI O4 Wide') && ct.includes('Matrix 1S') && ct.includes('GF 1409') && ct.includes('25000 KV') && ct.includes('BETAFPVG473_V2'), 'Meteor65 mit Datenblatt (25000 KV, Target aus der Werks-CLI)');
   ok((await A.textContent('#view-workshop')).includes('BETAFPV Lava II 480 mAh 1S') && (await A.textContent('#view-workshop')).includes('Gemfan 1409'), 'Akkus und Props aus der Bestellung im Lager');
 
   // Vorlage beim Erfassen
