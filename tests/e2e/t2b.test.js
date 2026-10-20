@@ -30,7 +30,7 @@ async function setStock(p, name, n) { await tab(p, 'workshop'); await p.locator(
   // Crash-Flug mit Teilen
   await tab(A, 'flights'); await A.click('[data-act=flight-new]');
   ok(await A.locator('#f-crashbox').isHidden(), 'Teilefeld erst bei Crash sichtbar');
-  await A.fill('#f-min', '4'); await A.check('#f-crash', { force: true });
+  await A.fill('#f-min', '4'); await A.click('label:has(#f-crash)'); await A.waitForTimeout(50);
   await A.fill('#f-repair', 'Props hin');
   await A.locator('#f-parts .pu-part').first().selectOption({ label: 'HQProp T3x3x3 Durable' });
   await A.locator('#f-parts .pu-qty').first().fill('2');

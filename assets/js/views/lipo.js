@@ -143,7 +143,20 @@ export function createLipo(ctx) {
     const f = (id, label, val, extra) =>
       '<label class="field"><span class="label">' + label + '</span><input type="text" inputmode="decimal" id="' + id +
       '" data-act="lp-calc" value="' + h(val === "" || val == null ? "" : String(val).replace(".", ",")) + '"' + (extra || "") + "></label>";
+    // Akku aus dem Bestand übernehmen (nur passende Sorte).
+    const bats = S().batteries.filter((b) => (b.chem === "lihv" ? "lihv" : "lipo") === chemKey);
+    const drones = S().drones;
+    const name = (b) => {
+      const d = drones.find((x) => x.id === b.droneId);
+      return b.label + " · " + b.mah + " mAh " + b.cells + "S" + (d && drones.length > 1 ? " · " + d.name : "");
+    };
     return (
+      (bats.length
+        ? '<label class="field" style="max-width:26rem"><span class="label">Akku aus dem Bestand</span><select id="lp-bat" data-act="lp-bat">' +
+          '<option value="">— eigene Werte —</option>' +
+          bats.map((b) => '<option value="' + b.id + '">' + h(name(b)) + "</option>").join("") +
+          "</select></label>"
+        : "") +
       '<div class="form-row">' +
       f("lp-mah", "Kapazität mAh", inp.mah) +
       f("lp-cells", "Zellen (S)", inp.cells) +
@@ -479,6 +492,18 @@ export function createLipo(ctx) {
     return false;
   }
 
+  function change(ev) {
+    const t = ev.target;
+    if (!t || t.id !== "lp-bat") return false;
+    const b = S().batteries.find((x) => x.id === t.value);
+    if (b) {
+      $("#lp-mah").value = String(b.mah || "");
+      $("#lp-cells").value = String(b.cells || "");
+      input({ target: $("#lp-mah") });
+    }
+    return true;
+  }
+
   // Rechner rechnet beim Tippen, ohne die Seite neu aufzubauen (Fokus bleibt).
   function input(ev) {
     const t = ev.target;
@@ -504,5 +529,6 @@ export function createLipo(ctx) {
     chargerBlock: chargerBlock,
     click: click,
     input: input,
+    change: change,
   };
 }

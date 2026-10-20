@@ -22,13 +22,15 @@ async function addFlight(p, min, batIdx) {
   await p.click('.tab[data-view=flights]');
   await p.click('[data-act=flight-new]');
   await p.fill('#f-min', String(min));
-  await p.locator('.f-bat').nth(batIdx).check({ force: true });
+  await p.locator('#f-batbox label').nth(batIdx).click();
   await p.click('[data-act=flight-save]');
   await p.waitForTimeout(200);
 }
 async function cycles(p, i) {
   await p.click('.tab[data-view=batteries]');
-  return (await p.locator('#view-batteries .card .label.mono').nth(i).textContent()).split('/')[0].trim();
+  // Zahl = Position, Text = Bezeichnung des Akkus
+  const card = typeof i === 'number' ? p.locator('#view-batteries .grid--cards > .card').nth(i) : p.locator('#view-batteries .card', { hasText: i });
+  return (await card.locator('.label.mono').first().textContent()).split('/')[0].trim();
 }
 async function trainNote(p, text) {
   await p.click('.tab[data-view=training]');
@@ -65,21 +67,21 @@ const norm = recs => JSON.stringify(live(recs).map(r => [r.k, r.data]).sort());
     flights: [{ id: 'f1', date: '2026-09-10', spotId: '', minutes: 4, batteryIds: ['old1'], maxSpeed: 80, maxAlt: 40, weather: '', crash: false, repair: '', notes: '' }],
     spots: [], training: {}, checks: {}, settings: { lifespan: 150 } })));
   await m.goto(URL); await ready(m);
-  ok(await cycles(m, 0) === '7', 'Umzug: Zyklen bleiben 7');
+  ok(await cycles(m, 'Alt #1') === '7', 'Umzug: Zyklen bleiben 7');
   let r = live(await snap(m));
   ok(r.find(x => x.k === 'batteries/old1').data.cyclesBase === 6, 'Umzug: Grundwert 6 + 1 Flug');
   await addFlight(m, 5, 0);
-  ok(await cycles(m, 0) === '8', 'Neuer Flug zählt Zyklus');
-  await m.click('[data-act=bat-cycle]'); await m.waitForTimeout(150);
-  ok(await cycles(m, 0) === '9', '+1 Zyklus');
+  ok(await cycles(m, 'Alt #1') === '8', 'Neuer Flug zählt Zyklus');
+  await m.locator('#view-batteries .card', { hasText: 'Alt #1' }).locator('[data-act=bat-cycle]').click(); await m.waitForTimeout(150);
+  ok(await cycles(m, 'Alt #1') === '9', '+1 Zyklus');
   await m.reload(); await ready(m);
-  ok(await cycles(m, 0) === '9', 'Nach Neuladen weiter 9');
+  ok(await cycles(m, 'Alt #1') === '9', 'Nach Neuladen weiter 9');
   ok(await m.evaluate(() => localStorage.getItem('fpv-ops-v1')) !== null, 'Alter Eintrag bleibt als Sicherheitskopie');
   // Flug löschen
   await m.click('.tab[data-view=flights]');
   await m.locator('[data-act=flight-edit]').first().click();
   await m.click('[data-act=flight-del]'); await m.waitForTimeout(200);
-  ok(await cycles(m, 0) === '8', 'Flug löschen nimmt Zyklus zurück');
+  ok(await cycles(m, 'Alt #1') === '8', 'Flug löschen nimmt Zyklus zurück');
 
   // ---------- Zwei Geräte
   const A = await device(b, 'A'), B = await device(b, 'B');
@@ -98,7 +100,7 @@ const norm = recs => JSON.stringify(live(recs).map(r => [r.k, r.data]).sort());
   const ra = await snap(A), rb = await snap(B);
   ok(norm(ra) === norm(rb), 'Nach Abgleich identisch');
   const la = live(ra);
-  ok(la.filter(x => x.c === 'batteries').length === (await A.evaluate(() => DEFAULT_BATTERIES.length)), 'Startakkus nicht doppelt');
+  ok(la.filter(x => x.c === 'batteries').length === (await A.evaluate(() => DEFAULT_BATTERIES.length)) + 4, 'Startakkus (4 R-Line + 4 LAVA) nicht doppelt');
   ok(la.filter(x => x.c === 'flights').length === 3, 'Alle 3 Flüge da');
   const tr = la.find(x => x.c === 'training');
   ok(tr && tr.data.log.length === 2, 'Beide Trainingsnotizen erhalten');

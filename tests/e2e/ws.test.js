@@ -55,7 +55,7 @@ async function putCode(p, code) { await p.click('.topbar [data-act=backup]'); aw
   await putCode(B, await getCode(A)); await putCode(A, await getCode(B));
   ok(await stockOf(A, 'HQProp T3x3x3') === '9' && await stockOf(B, 'HQProp T3x3x3') === '9', 'Bestand 8 - 1 (A) + 2 (B) = 9 auf beiden');
   const pa = (await snap(A)).filter(r => r.c === 'parts' && !r.d).length, pb = (await snap(B)).filter(r => r.c === 'parts' && !r.d).length;
-  ok(pa === pb && pa === 14, 'Katalog nicht doppelt (' + pa + '/' + pb + ')');
+  ok(pa === pb && pa === 16, 'Katalog nicht doppelt (' + pa + '/' + pb + ')');
 
   // Bestehender Nutzer aus Etappe 0 (IDB ohne Werkstatt) bekommt Katalog
   const C = await device(b, 'C'); await C.goto(URL + 'manifest.webmanifest');

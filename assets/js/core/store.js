@@ -14,7 +14,7 @@
    ========================================================================== */
 
 import { uid, today } from "./util.js";
-import { SEED_DRONES, SEED_PARTS, SEED_TASKS } from "./catalog.js";
+import { SEED_DRONES, SEED_PARTS, SEED_TASKS, SEED_BATTERIES } from "./catalog.js";
 
 const DB_NAME = "fpv-ops";
 const LEGACY_KEY = "fpv-ops-v1";
@@ -44,6 +44,7 @@ export function blankState() {
       mah: b.mah,
       cells: b.cells,
       crate: b.crate,
+      droneId: "default-drone-1",
       cyclesBase: 0,
       status: "storage",
       statusSince: today(),
@@ -419,6 +420,7 @@ function seedCatalog() {
   SEED_DRONES.forEach((d) => add("drones", d));
   SEED_PARTS.forEach((p) => add("parts", p));
   SEED_TASKS.forEach((t) => add("maintTasks", t));
+  SEED_BATTERIES.forEach((b) => add("batteries", Object.assign({}, b, { statusSince: b.statusSince || today(), added: b.added || today() })));
   list.forEach(remember);
   return list;
 }
