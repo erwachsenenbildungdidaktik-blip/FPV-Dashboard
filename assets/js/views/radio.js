@@ -24,6 +24,12 @@ const FUNCTIONS = [
   "Prearm", "GPS Rescue", "Blackbox", "OSD aus", "Rate-Profil", "Ansage / Timer", "Sonstiges",
 ];
 
+// Mit Maus (Windows-Programm, Laptop-Browser) Klick und Rechtsklick, sonst
+// (Handy, APK) Tippen und lang drücken. Bestimmt nur die Hinweistexte.
+const MOUSE = typeof matchMedia === "function" && matchMedia("(hover: hover) and (pointer: fine)").matches;
+const HINT_SHOW = MOUSE ? "Klick zeigt die Belegung" : "Antippen zeigt die Belegung";
+const HINT_EDIT = MOUSE ? "Rechtsklick" : "lang drücken";
+
 const CHANNELS = [];
 for (let c = 5; c <= 16; c++) CHANNELS.push({ v: c, label: "CH" + c + " (AUX" + (c - 4) + ")" });
 
@@ -385,7 +391,7 @@ export function createRadio(ctx) {
     } else {
       const open = all.filter((c) => !pins[c.key]).length;
       out +=
-        '<small class="lp-small">Antippen zeigt die Belegung, lang drücken (Rechtsklick) zum Ändern.' + (open ? " " + open + " Elemente sind noch nicht auf dem Bild platziert." : "") + "</small>" +
+        '<small class="lp-small">' + HINT_SHOW + ", " + HINT_EDIT + " zum Ändern." + (open ? " " + open + " Elemente sind noch nicht auf dem Bild platziert." : "") + "</small>" +
         '<div style="margin-top:6px"><button class="btn btn--sm" data-act="rd-place">Elemente platzieren</button></div>';
     }
     return out;
@@ -492,7 +498,7 @@ export function createRadio(ctx) {
       (showPhoto ? photoBlock(r) : "") +
       (!showPhoto && TEMPLATES[r.template]
         ? '<div class="rd-wrap">' + svg(r) + "</div>" +
-          '<small class="lp-small">Schematisch, nicht massstabsgetreu. Belegte Elemente leuchten, die Zahl darunter ist der Kanal. Antippen zeigt die Belegung, lang drücken (am Laptop Rechtsklick) zum Ändern.' +
+          '<small class="lp-small">Schematisch, nicht massstabsgetreu. Belegte Elemente leuchten, die Zahl darunter ist der Kanal. ' + HINT_SHOW + ", " + HINT_EDIT + " zum Ändern." +
           (r.photoId ? "" : " Eigenes Bild (z. B. aus der Bedienungsanleitung) unten bei <em>Unterlagen</em> hinzufügen.") + "</small>"
         : "") +
       (extras.length && !placing
@@ -885,7 +891,7 @@ export function createRadio(ctx) {
           (pos ? "<span>" + h(pos) + "</span>" : "") +
           (m.note ? "<span>" + h(m.note) + "</span>" : "")
         : "<span>Noch nicht belegt</span>") +
-      "<small>Lang drücken zum " + (isMapped(m) ? "Ändern" : "Belegen") + "</small>";
+      "<small>" + (MOUSE ? "Rechtsklick" : "Lang drücken") + " zum " + (isMapped(m) ? "Ändern" : "Belegen") + "</small>";
     tip.hidden = false;
     const b = el.getBoundingClientRect();
     const w = tip.offsetWidth, ht = tip.offsetHeight;

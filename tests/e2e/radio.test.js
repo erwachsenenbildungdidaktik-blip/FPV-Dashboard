@@ -86,6 +86,7 @@ async function map(p, key, fn, ch, pos) {
   ok(await A.locator('#rd-tip').isVisible() && (await A.textContent('#rd-tip')).includes('CH5 (AUX1)') && (await A.textContent('#rd-tip')).includes('Arm') && await A.locator('#dlg[open]').count() === 0, 'Tippen: Blase mit SF · CH5 · Arm, kein Dialog');
   await A.click('#view-radio .rd-ctl[data-key=SA]'); await A.waitForTimeout(100);
   ok((await A.textContent('#rd-tip')).includes('Noch nicht belegt'), 'Tippen auf leeres Element: noch nicht belegt');
+  ok((await A.textContent('#rd-tip')).includes('Lang drücken zum Belegen') && !(await view(A)).includes('Rechtsklick'), 'Handy: Hinweise ohne Rechtsklick');
   const sa = await A.locator('#view-radio .rd-ctl[data-key=SA] rect').boundingBox();
   await A.mouse.move(sa.x + sa.width / 2, sa.y + sa.height / 2); await A.mouse.down(); await A.waitForTimeout(650); await A.mouse.up(); await A.waitForTimeout(150);
   ok(await A.locator('#dlg[open]').count() === 1 && (await A.textContent('#dlg-title')).includes('SA'), 'Lang drücken öffnet die Belegung und der Dialog bleibt offen');
