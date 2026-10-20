@@ -694,6 +694,30 @@ const CHECKLISTS = [
       { t: "Lernschritt im Training erfasst", h: "Was lief, was nicht. Solange es frisch ist." },
     ],
   },
+  {
+    /* Einrichtung der zweiten Drohne. BETAFPV hat kein Handbuch zur O4-Version:
+       Binden und Modes aus dem Meteor-Handbuch (analog), Video aus der
+       DJI-O4-Anleitung, Werte aus BETAFPVs Werks-CLI (Betaflight 2026.6.1). */
+    id: "setup-meteor65",
+    title: "Einrichtung Meteor65 Pro II O4",
+    icon: "M",
+    items: [
+      { t: "Akku-Etikett der LAVA geprüft", h: "4,35 V oder HV drauf: im Reiter Akkus auf LiHV stellen. Sonst LiPo lassen. Als LiPo laden ist immer sicher." },
+      { t: "Ladeadapter BT2.0 für die F160 vorhanden", h: "Laden mit höchstens 1C, also 0,4 A pro LAVA. Balancer gibt es bei 1S nicht." },
+      { t: "Drohne ohne Akku gewogen und eingetragen", h: "Werkstatt → Meteor65 → Bearbeiten. Händler nennen rund 36 g." },
+      { t: "O4 Air Unit aktiviert und mit der Goggles 3 gekoppelt", h: "Nach der DJI-O4-Anleitung aus dem Karton." },
+      { t: "Neues Modell auf der TX16S angelegt", h: "Nicht das Seeker-Modell umbauen, sonst passt dort nichts mehr." },
+      { t: "ELRS gebunden", h: "Drohne 3-mal schnell ein- und ausstecken, LED blinkt doppelt grün. Funke auf Bind. LED dauerhaft grün = gebunden." },
+      { t: "Eigenen diff all gesichert", h: "Betaflight → CLI → diff all → Save to File. In der App unter Betaflight → Meteor65 → Stände speichern, bevor du etwas änderst." },
+      { t: "Mit der Werksdatei verglichen", h: "Steht bei dir osd_displayport_device = MSP statt MAX7456, ist die Werksdatei die analoge Fassung: nicht einspielen." },
+      { t: "Schalter an der TX16S belegt", h: "Ab Werk: ARM AUX1 oben, Angle/Horizon AUX2 unten/Mitte, Turtle AUX3 oben, Beeper AUX4 oben. In der App unter Funke eintragen." },
+      { t: "Schalter im Betaflight-Reiter Receiver geprüft", h: "ARM-Schalter oben muss auf CH5 rund 2000 ergeben. In der App unter Betaflight → Modes muss „ARM passt“ stehen." },
+      { t: "Props geprüft: GF 1409, Props Out", h: "Die vorderen Props drehen nach aussen. Fest auf der Welle, keine Kerben." },
+      { t: "Motortest ohne Props", h: "Armen, kurz Gas, alle vier drehen in die richtige Richtung. Dann disarmen." },
+      { t: "Failsafe getestet", h: "Ohne Props: armen, Funke aus. Motoren müssen stoppen." },
+      { t: "Erster Schwebeflug drinnen im Angle-Modus", h: "Kurz, tief, viel Platz. Danach Motoren auf Wärme fühlen." },
+    ],
+  },
 ];
 
 /* ---------------------------------------------------------------- Links ---
