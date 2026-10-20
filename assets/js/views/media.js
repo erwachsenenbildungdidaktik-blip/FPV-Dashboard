@@ -107,8 +107,9 @@ export function createMedia(ctx) {
     const videos = list.filter((f) => VIDEO.test(f.name));
     const srts = list.filter((f) => /\.srt$/i.test(f.name));
     const osds = list.filter((f) => /\.osd$/i.test(f.name));
+    const sel = $("#md-drone");
     const drone = ctx.activeDrone();
-    const droneId = drone ? drone.id : "";
+    const droneId = sel ? sel.value : drone ? drone.id : "";
     if (!videos.length && !srts.length) return Promise.resolve(ctx.toast("Keine Videos oder .srt-Dateien gewählt"));
 
     return Promise.all(srts.map((f) => f.text().then((t) => ({ f: f, text: t })))).then((srtTexts) =>
@@ -224,6 +225,11 @@ export function createMedia(ctx) {
       '<div class="card">' +
       '<div class="form-row" style="align-items:flex-end">' +
       '<label class="field"><span class="label">Quelle</span><select id="md-source"><option value="Air Unit">Drohne (Air Unit)</option><option value="Brille">Brille</option></select></label>' +
+      (s.drones.length > 1
+        ? '<label class="field"><span class="label">Drohne</span><select id="md-drone">' +
+          s.drones.map((d) => '<option value="' + d.id + '"' + (ctx.activeDrone() && ctx.activeDrone().id === d.id ? " selected" : "") + ">" + h(d.name) + "</option>").join("") +
+          "</select></label>"
+        : "") +
       '<div class="field"><button class="btn btn--primary btn--block" data-act="md-pick">Dateien wählen</button></div>' +
       "</div>" +
       '<input type="file" id="md-file" multiple accept="video/*,.mp4,.mov,.srt,.osd" hidden>' +

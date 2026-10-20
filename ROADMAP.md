@@ -48,7 +48,7 @@ Repo, in der Web-App und in jeder APK.
   (Hugos Vorgabe). Auf jedem Gerät also einmal eingeben.
 - Hugos bestehende Installationen: Beim ersten Start nach dem Update erscheint die Abfrage
   ebenfalls; seine übrigen Daten bleiben unberührt.
-- Neue Nutzer starten ohne Hugos Gear: Startdrohne, Akkus, Katalog mit Hugos Bestand nicht mehr
+- Neue Nutzer starten ohne Hugos Gear (inzwischen auch Meteor65 Pro II, LAVA #1–#4, Lava- und Gemfan-Teile): Startdrohne, Akkus, Katalog mit Hugos Bestand nicht mehr
   automatisch anlegen. Stattdessen im Einstieg anbieten: "leer starten" oder "Beispiel
   Seeker 3 laden". Bestehende Daten (feste IDs) nicht anfassen.
 - Tests: Ersteinrichtung, Überspringen, Bearbeiten, Angaben landen nicht im Backup-Code.

@@ -7,7 +7,7 @@
 
 import { $, $$, uid, h, today, deDate, daysSince } from "../core/util.js";
 import { stockMoves } from "../core/store.js";
-import { PART_CATEGORIES } from "../core/catalog.js";
+import { PART_CATEGORIES, DRONE_TEMPLATES } from "../core/catalog.js";
 
 export function createWorkshop(ctx) {
   let filter = "";
@@ -320,6 +320,11 @@ export function createWorkshop(ctx) {
     const specs = (v.specs || []).map((x) => x.k + ": " + x.v).join("\n");
     ctx.openDialog(
       d ? "Drohne bearbeiten" : "Drohne erfassen",
+      (d
+        ? ""
+        : '<label class="field"><span class="label">Vorlage</span><select id="d-tpl"><option value="">— leer —</option>' +
+          DRONE_TEMPLATES.map((t) => '<option value="' + t.id + '">' + h(t.model || t.name) + "</option>").join("") +
+          "</select></label>") +
       '<label class="field"><span class="label">Name</span><input type="text" id="d-name" value="' + h(v.name) + '" placeholder="Seeker 3"></label>' +
         '<label class="field"><span class="label">Modell</span><input type="text" id="d-model" value="' + h(v.model) + '"></label>' +
         '<label class="field"><span class="label">Gewogen ohne Akku (g)</span><input type="number" id="d-weight" min="0" step="1" inputmode="numeric" value="' + h(v.weightDry || "") + '"></label>' +
@@ -871,6 +876,17 @@ export function createWorkshop(ctx) {
   }
 
   function change(ev) {
+    if (ev.target.id === "d-tpl") {
+      const t = DRONE_TEMPLATES.find((x) => x.id === ev.target.value);
+      if (t) {
+        $("#d-name").value = t.name;
+        $("#d-model").value = t.model || "";
+        $("#d-specs").value = (t.specs || []).map((x) => x.k + ": " + x.v).join("\n");
+        $("#d-url").value = t.url || "";
+        $("#d-notes").value = t.notes || "";
+      }
+      return true;
+    }
     if (ev.target.id === "ws-filter") {
       filter = ev.target.value;
       render();

@@ -153,6 +153,35 @@ import { createBetaflight } from "./views/betaflight.js";
     return s ? s.name : "—";
   }
 
+  /* Akkus und Drohnen: Ein Akku kann einer Drohne gehören (droneId) oder frei
+     sein. Freie Akkus erscheinen bei jeder Drohne. Der Filter im Reiter Akkus
+     gilt pro Gerät. */
+  let batFilter = "";
+  try {
+    batFilter = localStorage.getItem(KEY + ":batdrone") || "";
+  } catch (e) {}
+
+  function droneById(id) {
+    return state.drones.find((d) => d.id === id) || null;
+  }
+
+  function batsFor(droneId) {
+    if (!droneId) return state.batteries;
+    return state.batteries.filter((b) => !b.droneId || b.droneId === droneId);
+  }
+
+  // Die Drohne, deren Gewicht im Reiter Akkus eingetragen wird.
+  function weighDrone() {
+    return droneById(batFilter) || workshop.activeDrone();
+  }
+
+  function droneOptions(sel, emptyLabel) {
+    return (
+      (emptyLabel != null ? '<option value="">' + h(emptyLabel) + "</option>" : "") +
+      state.drones.map((d) => '<option value="' + d.id + '"' + (d.id === sel ? " selected" : "") + ">" + h(d.name) + "</option>").join("")
+    );
+  }
+
   function batteryLabel(id) {
     const b = state.batteries.find((x) => x.id === id);
     return b ? b.label : "?";
@@ -170,7 +199,7 @@ import { createBetaflight } from "./views/betaflight.js";
   // Startgewicht = gewogene Drohne ohne Akku + Akku. Beides trägst du selbst ein,
   // Herstellerangaben dazu sind oft ungenau.
   function takeoffWeight(b) {
-    const d = workshop.activeDrone();
+    const d = droneById(b.droneId) || weighDrone();
     const dry = Number(d && d.weightDry) || 0;
     const pack = Number(b.weight) || 0;
     if (!dry || !pack) return null;
@@ -523,6 +552,13 @@ import { createBetaflight } from "./views/betaflight.js";
       '<div class="section-head"><span class="label label--accent">Akkubestand</span>' +
       '<span class="section-head__rule"></span>' +
       '<button class="btn btn--sm btn--primary" data-act="bat-new">Akku erfassen</button></div>';
+    if (batFilter && !droneById(batFilter)) batFilter = "";
+    if (state.drones.length > 1) {
+      out +=
+        '<label class="field" style="max-width:20rem"><span class="label">Drohne</span><select id="bat-drone">' +
+        droneOptions(batFilter, "Alle Drohnen") + "</select></label>";
+    }
+    const wd = weighDrone();
 
     const life = Number(state.settings.lifespan) || 200;
     out +=
@@ -532,17 +568,18 @@ import { createBetaflight } from "./views/betaflight.js";
       '<small style="display:block;margin-top:6px">Richtwert für High-C-Packs im Freestyle. Der Balken pro Akku rechnet gegen diesen Wert. Das ist eine Faustregel, kein Messwert.</small>' +
       "</label>" +
       '<label class="field" style="margin:14px 0 0">' +
-      '<span class="label">' + h(workshop.activeDrone() ? workshop.activeDrone().name + " gewogen" : "Drohne gewogen") + ', ohne Akku (g)</span>' +
+      '<span class="label">' + h(wd ? wd.name + " gewogen" : "Drohne gewogen") + ', ohne Akku (g)</span>' +
       '<input type="number" min="0" max="2000" step="1" id="drone-weight" inputmode="numeric" placeholder="z. B. 175" value="' +
-      h((workshop.activeDrone() && workshop.activeDrone().weightDry) || "") + '"' + (workshop.activeDrone() ? "" : " disabled") + ">" +
+      h((wd && wd.weightDry) || "") + '"' + (wd ? "" : " disabled") + ">" +
       '<small style="display:block;margin-top:6px">Startklar mit Props, GPS und Kamera, nur ohne Akku, auf die Waage. Zusammen mit dem Akkugewicht ergibt das das Startgewicht pro Akku. Welche Regeln ab 250 g gelten, steht beim BAZL.</small>' +
       "</label></div>";
 
-    if (!state.batteries.length) {
-      out += '<div class="empty">Kein Akku erfasst.</div>';
+    const shown = batsFor(batFilter);
+    if (!shown.length) {
+      out += '<div class="empty">' + (state.batteries.length ? "Kein Akku für diese Drohne erfasst." : "Kein Akku erfasst.") + "</div>";
     } else {
       out += '<div class="grid grid--cards">';
-      state.batteries.forEach((b) => {
+      shown.forEach((b) => {
         const hp = batteryHealth(b);
         const st = BATTERY_STATUS[b.status] || BATTERY_STATUS.empty;
         const d = daysSince(b.statusSince);
@@ -552,7 +589,8 @@ import { createBetaflight } from "./views/betaflight.js";
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">' +
           "<div><h3>" + h(b.label) + "</h3>" +
           '<div class="row__meta">' + h(b.brand || "") + " · " + h(b.mah) + " mAh · " +
-          h(b.cells) + "S" + (b.crate ? " · " + h(b.crate) + "C" : "") + " · " + chemOf(b).label + "</div></div>" +
+          h(b.cells) + "S" + (b.crate ? " · " + h(b.crate) + "C" : "") + " · " + chemOf(b).label +
+          (droneById(b.droneId) && state.drones.length > 1 ? " · " + h(droneById(b.droneId).name) : "") + "</div></div>" +
           '<span class="chip ' + st.chip + '">' + st.label + "</span></div>" +
           '<div style="margin:13px 0 5px;display:flex;justify-content:space-between">' +
           '<span class="label">Zyklen</span>' +
@@ -925,7 +963,10 @@ import { createBetaflight } from "./views/betaflight.js";
 
   function batteryDialog(id) {
     const b = id ? state.batteries.find((x) => x.id === id) : null;
-    const v = b || { label: "", brand: "", mah: 750, cells: 4, crate: 95, cycles: 0, weight: "", notes: "", chem: "lipo", bought: "" };
+    const v = b || {
+      label: "", brand: "", mah: 750, cells: 4, crate: 95, cycles: 0, weight: "", notes: "", chem: "lipo", bought: "",
+      droneId: batFilter || (state.drones.length === 1 ? state.drones[0].id : ""),
+    };
     openDialog(
       b ? "Akku bearbeiten" : "Akku erfassen",
       '<label class="field"><span class="label">Bezeichnung</span><input type="text" id="f-label" value="' +
@@ -945,6 +986,7 @@ import { createBetaflight } from "./views/betaflight.js";
         '<option value="lihv"' + (v.chem === "lihv" ? " selected" : "") + ">LiHV</option></select></label>" +
         '<label class="field"><span class="label">Kaufdatum</span><input type="date" id="f-bought" value="' + h(v.bought || "") + '"></label>' +
         "</div>" +
+        '<label class="field"><span class="label">Gehört zu Drohne</span><select id="f-bdrone">' + droneOptions(v.droneId || "", "— passt zu jeder —") + "</select></label>" +
         '<label class="field"><span class="label">Notizen</span><textarea id="f-notes" placeholder="Auffälligkeiten, Puffing. Messungen gehören ins Logbuch.">' +
         h(v.notes) + "</textarea></label>",
       (b ? '<button type="button" class="btn btn--danger" data-act="bat-del" data-id="' + b.id + '">Löschen</button>' : "") +
@@ -962,6 +1004,7 @@ import { createBetaflight } from "./views/betaflight.js";
       weight: Math.max(0, Number($("#f-weight").value) || 0) || "",
       chem: $("#f-chem").value === "lihv" ? "lihv" : "lipo",
       bought: $("#f-bought").value || "",
+      droneId: $("#f-bdrone").value || "",
       notes: $("#f-notes").value.trim(),
     };
     // Eingegeben wird der Gesamtstand, gespeichert der Anteil, der nicht aus
@@ -985,6 +1028,22 @@ import { createBetaflight } from "./views/betaflight.js";
 
   /* ---- Flug ---- */
 
+  // Akkus zur gewählten Drohne, schon angehakte bleiben immer sichtbar.
+  function batBoxes(droneId, checked) {
+    const list = state.batteries.filter((b) => batsFor(droneId).indexOf(b) !== -1 || checked.indexOf(b.id) !== -1);
+    return list.length
+      ? list
+          .map(
+            (b) =>
+              '<label class="check check--pick" style="padding:8px 0;border:0"><input type="checkbox" class="f-bat" value="' +
+              b.id + '"' + (checked.indexOf(b.id) > -1 ? " checked" : "") + ">" +
+              '<span class="check__box"></span><span class="check__text">' + h(b.label) +
+              '<span class="check__hint">' + (b.cycles || 0) + " Zyklen</span></span></label>"
+          )
+          .join("")
+      : '<div class="row__meta">Keine Akkus für diese Drohne erfasst.</div>';
+  }
+
   function flightDialog(id) {
     const f = id ? state.flights.find((x) => x.id === id) : null;
     const v = f || {
@@ -1001,17 +1060,6 @@ import { createBetaflight } from "./views/betaflight.js";
       '<option value="">— Gebiet wählen —</option>' +
       state.spots.map((s) => '<option value="' + s.id + '"' + (v.spotId === s.id ? " selected" : "") + ">" + h(s.name) + "</option>").join("");
 
-    const batBoxes = state.batteries.length
-      ? state.batteries
-          .map(
-            (b) =>
-              '<label class="check check--pick" style="padding:8px 0;border:0"><input type="checkbox" class="f-bat" value="' +
-              b.id + '"' + ((v.batteryIds || []).indexOf(b.id) > -1 ? " checked" : "") + ">" +
-              '<span class="check__box"></span><span class="check__text">' + h(b.label) +
-              '<span class="check__hint">' + (b.cycles || 0) + " Zyklen</span></span></label>"
-          )
-          .join("")
-      : '<div class="row__meta">Keine Akkus erfasst.</div>';
 
     openDialog(
       f ? "Flug bearbeiten" : "Flug erfassen",
@@ -1029,7 +1077,7 @@ import { createBetaflight } from "./views/betaflight.js";
         '<label class="field"><span class="label">Wetter</span><input type="text" id="f-weather" value="' + h(v.weather) +
         '" placeholder="Sonnig, 12 °C, Wind 8 km/h aus West"></label>' +
         '<div class="field"><span class="label">Verwendete Akkus</span>' +
-        '<div style="border:1px solid var(--line);border-radius:6px;padding:4px 11px">' + batBoxes + "</div>" +
+        '<div id="f-batbox" style="border:1px solid var(--line);border-radius:6px;padding:4px 11px">' + batBoxes(droneId, v.batteryIds || []) + "</div>" +
         '<small style="display:block;margin-top:5px">Jeder angehakte Akku bekommt beim Speichern einen Zyklus gutgeschrieben.</small></div>' +
         '<label class="check" style="border:1px solid var(--line);border-radius:6px;margin-bottom:11px">' +
         '<input type="checkbox" id="f-crash"' + (v.crash ? " checked" : "") + '><span class="check__box"></span>' +
@@ -1600,6 +1648,7 @@ import { createBetaflight } from "./views/betaflight.js";
     if (media.change(ev)) return;
     if (radio.change(ev)) return;
     if (betaflight.change(ev)) return;
+    if (lipo.change(ev)) return;
     if (ev.target.id === "f-crash") {
       $("#f-crashbox").hidden = !ev.target.checked;
       return;
@@ -1624,8 +1673,21 @@ import { createBetaflight } from "./views/betaflight.js";
       updateChecklistProgress(cid);
       return;
     }
+    if (ev.target.id === "bat-drone") {
+      batFilter = ev.target.value;
+      try {
+        localStorage.setItem(KEY + ":batdrone", batFilter);
+      } catch (e) {}
+      renderBatteries();
+      return;
+    }
+    if (ev.target.id === "f-drone" && $("#f-batbox")) {
+      const keep = $$(".f-bat").filter((c) => c.checked).map((c) => c.value);
+      $("#f-batbox").innerHTML = batBoxes(ev.target.value, keep);
+      return;
+    }
     if (ev.target.id === "drone-weight") {
-      const d = workshop.activeDrone();
+      const d = weighDrone();
       if (d) {
         d.weightDry = Math.max(0, Math.round(Number(ev.target.value) || 0)) || "";
         save();

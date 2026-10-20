@@ -43,7 +43,54 @@ export const SEED_DRONES = [
     ],
     notes: "Herstellerangabe 175 g ohne Akku. Selbst wiegen und unter „Bearbeiten“ eintragen, das ergibt das Startgewicht pro Akku.",
   },
+  {
+    // Angaben vom 20.10.2026 aus Händlerseiten (getfpv, racedayquads, rotorama,
+    // dronex.gr) und der BETAFPV-Seite zum Matrix-1S-Board. betafpv.com selbst
+    // war aus der Arbeitsumgebung nicht erreichbar. Widersprüche stehen dabei.
+    id: "seed-meteor65-pro2-o4",
+    _order: 2,
+    name: "Meteor65 Pro II",
+    model: "BETAFPV Meteor65 Pro II O4, 1S Brushless Whoop, DJI O4 Wide, ELRS 2.4 GHz",
+    weightDry: "",
+    url: "https://betafpv.com/products/meteor65-pro-ii-o4-brushless-whoop-quadcopter",
+    specs: [
+      { k: "Rahmen", v: "1S Whoop mit Schutzringen, Radstand 70 mm" },
+      { k: "Flugcontroller", v: "Matrix 1S 3IN1 HD: FC, ESC und ELRS-Empfänger auf einer Platine, MCU STM32G473 (Händlerangabe)" },
+      { k: "Gyro", v: "Je nach Quelle BMI270 oder ICM42688P – im Betaflight-Reiter Setup nachsehen" },
+      { k: "ESC", v: "12 A (Händlerangabe), Bluejay" },
+      { k: "Motoren", v: "0802 Freestyle (2026), KV-Angaben widersprechen sich: 22000 oder 25000 KV" },
+      { k: "Props ab Werk", v: "GF 1409, 3-Blatt" },
+      { k: "Video", v: "DJI O4 Wide Air Unit, 159° Blickwinkel, Aufnahme bis 4K/60" },
+      { k: "Empfänger", v: "ELRS 2.4 GHz onboard (seriell, CRSF)" },
+      { k: "Akku", v: "1S, BT2.0, empfohlen LAVA II 1S 480 mAh" },
+      { k: "Flugzeit", v: "ca. 4:05 mit LAVA II 480 mAh, ca. 2:40 mit LAVA 300 mAh (Herstellerangabe)" },
+    ],
+    notes: "Händler nennen 36,2 g ohne Akku (eine Amazon-Seite 18,3 g, wohl falsch). Selbst wiegen und eintragen. Akku-Sorte auf dem Etikett prüfen: Mehrere Händler führen die LAVA II als LiHV (4,35 V). Steht 4,35 V oder HV drauf, im Reiter Akkus auf LiHV stellen; als LiPo laden ist sicher, nur nicht ganz voll.",
+  },
 ];
+
+// Akkus aus der Bestellung vom 20.10.2026 (fpvracing.ch, Artikel 174009).
+// Sorte LiPo, bis Hugo das Etikett geprüft hat: als LiPo laden ist die sichere Seite.
+export const SEED_BATTERIES = [1, 2, 3, 4].map((n) => ({
+  id: "seed-lava2-" + n,
+  _order: 100 + n,
+  label: "LAVA #" + n,
+  brand: "BETAFPV LAVA II",
+  mah: 480,
+  cells: 1,
+  crate: 95,
+  chem: "lipo",
+  droneId: "seed-meteor65-pro2-o4",
+  cyclesBase: 0,
+  status: "storage",
+  statusSince: "",
+  added: "",
+  bought: "2026-10-20",
+  notes: "BT2.0. Etikett prüfen: 4,35 V oder HV → unter Bearbeiten auf LiHV stellen.",
+}));
+
+// Vorlagen für "Drohne erfassen": dieselben Datenblätter wie die Startdrohnen.
+export const DRONE_TEMPLATES = SEED_DRONES;
 
 function part(id, order, cat, name, spec, price, extra) {
   return Object.assign(
@@ -76,6 +123,19 @@ export const SEED_PARTS = [
   part("cat-tattu-rline-750-4s", 4, "Flugakkus", "Tattu R-Line 750 mAh 4S 95C (XT30)", "ca. 84 g", 25.9, {
     stockBase: 4,
     note: "Eigener Bestand. Einzelne Packs werden unter Akkus geführt.",
+  }),
+  part("cat-betafpv-lava2-480-1s", 15, "Flugakkus", "BETAFPV Lava II 480 mAh 1S 95C (BT2.0), 4er-Pack", "Artikel 174009, ca. 12,6 g pro Akku (Händlerangabe)", 28.9, {
+    stockBase: 1,
+    droneIds: ["seed-meteor65-pro2-o4"],
+    source: "Eigene Bestellung " + SHOP + ", 20.10.2026",
+    sourceDate: "2026-10-20",
+    note: "Eigener Bestand. Die vier Akkus werden einzeln unter Akkus geführt (LAVA #1–#4).",
+  }),
+  part("cat-gemfan-1409-3b", 16, "Props", "Gemfan 1409 3-Blatt Tiny Whoop (1,0 mm Welle)", "Artikel RD34. Serien-Prop der Meteor65 Pro II. Stückzahl der Packung prüfen.", 3.0, {
+    stockBase: 1,
+    droneIds: ["seed-meteor65-pro2-o4"],
+    source: "Eigene Bestellung " + SHOP + ", 20.10.2026",
+    sourceDate: "2026-10-20",
   }),
   part("cat-tattu-rline-650-4s", 5, "Flugakkus", "Tattu R-Line 650 mAh 4S 95C (XT30)", "ca. 80–82 g", 18.9),
   part("cat-geprc-660-4s", 6, "Flugakkus", "GEPRC 660 mAh 4S 90C (XT30)", "", 21.9),
