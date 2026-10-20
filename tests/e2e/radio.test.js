@@ -13,7 +13,7 @@ async function getCode(p) { await p.click('.topbar [data-act=backup]'); await p.
 async function putCode(p, code) { await p.click('.topbar [data-act=backup]'); await p.fill('#f-code', code); await p.click('[data-act=code-restore]'); await p.waitForTimeout(500); }
 const view = p => p.textContent('#view-radio');
 async function map(p, key, fn, ch, pos) {
-  await p.click('#view-radio .rd-ctl[data-key=' + key + ']');
+  await p.click('#view-radio .rd-ctl[data-key=' + key + ']', { button: 'right' });
   await p.fill('#rc-fn', fn);
   if (ch) await p.selectOption('#rc-ch', String(ch));
   const f = p.locator('.rc-pos'); for (let i = 0; i < (pos || []).length; i++) await f.nth(i).fill(pos[i]);
@@ -32,7 +32,7 @@ async function map(p, key, fn, ch, pos) {
   ok((await view(A)).includes('Noch kein Element mit der Funktion Arm'), 'Hinweis: kein Arm');
 
   // SF als Arm auf CH5
-  await A.click('#view-radio .rd-ctl[data-key=SF]');
+  await A.click('#view-radio .rd-ctl[data-key=SF]', { button: 'right' });
   ok(await A.locator('.rc-pos').count() === 2, 'SF hat 2 Stellungen');
   await A.click('#dlg-foot [data-act=dlg-close]');
   await map(A, 'SF', 'Arm', 5, ['disarmed', 'armed']);
@@ -56,7 +56,7 @@ async function map(p, key, fn, ch, pos) {
   await map(A, 'SF', 'Arm', 5, []);
 
   // Art umstellen (SE -> 2 Stellungen), Eingaben bleiben
-  await A.click('#view-radio .rd-ctl[data-key=SE]');
+  await A.click('#view-radio .rd-ctl[data-key=SE]', { button: 'right' });
   await A.fill('#rc-fn', 'Beeper');
   await A.selectOption('#rc-kind', 'sw2'); await A.waitForTimeout(100);
   ok(await A.locator('.rc-pos').count() === 2 && await A.inputValue('#rc-fn') === 'Beeper', 'Art umgestellt, Eingabe bleibt');
@@ -81,6 +81,29 @@ async function map(p, key, fn, ch, pos) {
   const txt = await A.evaluate(() => navigator.clipboard.readText());
   ok(txt.includes('CH5 (AUX1) · SF · Arm') && txt.includes('CH8 (AUX4) · SE · Beeper') && txt.includes('SI hinten'), 'Belegung als Text');
 
+  // Kurz tippen zeigt die Belegung, lang drücken öffnet den Dialog
+  await A.click('#view-radio .rd-ctl[data-key=SF]'); await A.waitForTimeout(100);
+  ok(await A.locator('#rd-tip').isVisible() && (await A.textContent('#rd-tip')).includes('CH5 (AUX1)') && (await A.textContent('#rd-tip')).includes('Arm') && await A.locator('#dlg[open]').count() === 0, 'Tippen: Blase mit SF · CH5 · Arm, kein Dialog');
+  await A.click('#view-radio .rd-ctl[data-key=SA]'); await A.waitForTimeout(100);
+  ok((await A.textContent('#rd-tip')).includes('Noch nicht belegt'), 'Tippen auf leeres Element: noch nicht belegt');
+  ok((await A.textContent('#rd-tip')).includes('Lang drücken zum Belegen') && !(await view(A)).includes('Rechtsklick'), 'Handy: Hinweise ohne Rechtsklick');
+  const sa = await A.locator('#view-radio .rd-ctl[data-key=SA] rect').boundingBox();
+  await A.mouse.move(sa.x + sa.width / 2, sa.y + sa.height / 2); await A.mouse.down(); await A.waitForTimeout(650); await A.mouse.up(); await A.waitForTimeout(150);
+  ok(await A.locator('#dlg[open]').count() === 1 && (await A.textContent('#dlg-title')).includes('SA'), 'Lang drücken öffnet die Belegung und der Dialog bleibt offen');
+  await A.click('#dlg-foot [data-act=dlg-close]');
+
+  // Belegung pro Drohne
+  ok(await A.locator('#rd-drone option').count() === 2 && (await view(A)).includes('Belegung für Seeker 3'), 'Drohnen-Auswahl über der Funke');
+  await A.selectOption('#rd-drone', 'seed-meteor65-pro2-o4'); await A.waitForTimeout(150);
+  ok(await A.locator('#view-radio .rd-ctl.is-on').count() === 0 && (await view(A)).includes('Belegung von Seeker 3 übernehmen'), 'Meteor: leer, Übernehmen angeboten');
+  await A.click('[data-act=rd-copyfrom]'); await A.waitForTimeout(150);
+  ok(await A.locator('#view-radio .rd-ctl.is-on[data-key=SF]').count() === 1, 'Belegung übernommen');
+  await map(A, 'SF', 'Arm', 6, []);
+  ok((await view(A)).includes('Arm liegt auf CH6'), 'Meteor eigene Belegung (Arm auf CH6)');
+  await A.selectOption('#rd-drone', 'default-drone-1'); await A.waitForTimeout(150);
+  ok(!(await view(A)).includes('Arm liegt auf CH6') && (await view(A)).includes('Belegung für Seeker 3'), 'Seeker unverändert');
+  await A.selectOption('#rd-drone', 'seed-meteor65-pro2-o4'); await map(A, 'SF', 'Arm', 5, []); await A.selectOption('#rd-drone', 'default-drone-1'); await A.waitForTimeout(100);
+
   // Abgleich mit Gerät B
   const B = await device(b, 'B'); await B.goto(URL); await ready(B);
   await putCode(B, await getCode(A));
@@ -90,12 +113,12 @@ async function map(p, key, fn, ch, pos) {
   // Zweite Funke, Umschalten
   await A.click('[data-act=rd-new]'); await A.fill('#rd-name', 'Zorro'); await A.selectOption('#rd-tpl', 'custom');
   await A.click('[data-act=rd-save]'); await A.waitForTimeout(150);
-  ok(await A.locator('#view-radio [data-act=rd-pick]').count() === 2 && await A.locator('#view-radio .rd-svg').count() === 0, 'eigene Funke ohne Zeichnung, Umschalter da');
-  await A.click('#view-radio [data-act=rd-pick]:has-text("TX16S")');
+  ok(await A.locator('#rd-radio option').count() === 2 && await A.locator('#view-radio .rd-svg').count() === 0, 'eigene Funke ohne Zeichnung, Umschalter da');
+  await A.selectOption('#rd-radio', { label: 'RadioMaster TX16S Mk3' });
   ok(await A.locator('#view-radio .rd-svg').count() === 1, 'zurück zur TX16S');
 
   // Bild der Funke, Link, Unterlagen
-  await A.click('#view-radio [data-act=rd-pick]:has-text("TX16S")');
+  await A.selectOption('#rd-radio', { label: 'RadioMaster TX16S Mk3' });
   const png = Buffer.from(await A.evaluate(() => { const c = document.createElement('canvas'); c.width = 400; c.height = 300; const g = c.getContext('2d'); g.fillStyle = '#ddd'; g.fillRect(0, 0, 400, 300); return c.toDataURL('image/png').split(',')[1]; }), 'base64');
   await A.click('#view-radio [data-act=rd-edit]');
   await A.fill('#rd-url', 'https://radiomasterrc.com/products/tx16s-mk3-radio-controller');
@@ -117,7 +140,7 @@ async function map(p, key, fn, ch, pos) {
   ok(pins.length === 2 && near('SE', 25, 10) && near('SF', 35, 10), 'SE und SF platziert: ' + JSON.stringify(pins));
   await A.click('[data-act=rd-place]'); await A.waitForTimeout(100);
   ok(await A.locator('#view-radio .rd-pin.is-on[data-key=SF]').count() === 1, 'SF (Arm) leuchtet auf dem Bild');
-  await A.click('#view-radio .rd-pin[data-key=SE]');
+  await A.click('#view-radio .rd-pin[data-key=SE]', { button: 'right' });
   ok((await A.textContent('#dlg-title')).includes('SE'), 'Punkt öffnet Belegung');
   await A.click('#dlg-foot [data-act=dlg-close]');
   await A.click('#view-radio [data-act=rd-view][data-mode=sketch]');
@@ -137,7 +160,7 @@ async function map(p, key, fn, ch, pos) {
 
   // Gerät B: Positionen kommen an, Dateien nicht
   await putCode(B, await getCode(A));
-  await B.click('.tab[data-view=radio]'); await B.click('#view-radio [data-act=rd-pick]:has-text("TX16S")'); await B.waitForTimeout(300);
+  await B.click('.tab[data-view=radio]'); await B.selectOption('#rd-radio', { label: 'RadioMaster TX16S Mk3' }); await B.waitForTimeout(300);
   let bv = await view(B);
   ok(bv.includes('liegt auf einem anderen Gerät') && bv.includes('nicht auf diesem Gerät') && await B.locator('#view-radio a.rd-manual').count() === 1, 'B: Link da, Dateien fehlen mit Hinweis');
   await B.setInputFiles('#view-radio input[data-act=rd-relink][accept="image/*"]', { name: 'tx16s-schalter.png', mimeType: 'image/png', buffer: png });

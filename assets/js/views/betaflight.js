@@ -7,6 +7,7 @@
    ========================================================================== */
 
 import { $, $$, uid, h, today, deDate } from "../core/util.js";
+import { radioMapFor } from "./radio.js";
 
 const AXES = [
   { k: "roll", label: "Roll", color: "#d9530c", dash: "" },
@@ -159,7 +160,8 @@ export function createBetaflight(ctx) {
 
   function radioFor(d) {
     const list = S().radios;
-    return list.find((r) => d && (r.droneIds || []).indexOf(d.id) !== -1) || list[0] || null;
+    const has = (r) => d && Object.keys(radioMapFor(r, d.id)).length;
+    return list.find(has) || list.find((r) => d && (r.droneIds || []).indexOf(d.id) !== -1) || list[0] || null;
   }
 
   /* ----------------------------------------------------------- Kopf */
@@ -268,12 +270,13 @@ export function createBetaflight(ctx) {
   function modeRows(d, cfg) {
     const p = parseDiff(cfg.text);
     const radio = radioFor(d);
+    const rmap = radio ? radioMapFor(radio, d.id) : {};
     const ctlOnCh = (ch) => {
       if (!radio) return [];
-      const keys = Object.keys(radio.map || {}).filter((k) => Number(radio.map[k].ch) === ch);
+      const keys = Object.keys(rmap).filter((k) => Number(rmap[k].ch) === ch);
       return keys.map((k) => {
         const extra = (radio.extra || []).find((x) => x.key === k);
-        return (extra ? extra.label : k) + (radio.map[k].fn ? " (" + radio.map[k].fn + ")" : "");
+        return (extra ? extra.label : k) + (rmap[k].fn ? " (" + rmap[k].fn + ")" : "");
       });
     };
     const hints = [];
@@ -286,8 +289,8 @@ export function createBetaflight(ctx) {
     });
     if (radio) {
       const armBf = p.aux.find((a) => a.box === 0);
-      const armKey = Object.keys(radio.map || {}).find((k) => /^arm$/i.test((radio.map[k].fn || "").trim()));
-      const armRadio = armKey ? Number(radio.map[armKey].ch) : null;
+      const armKey = Object.keys(rmap).find((k) => /^arm$/i.test((rmap[k].fn || "").trim()));
+      const armRadio = armKey ? Number(rmap[armKey].ch) : null;
       if (armBf && armRadio && armBf.aux + 5 !== armRadio)
         hints.unshift({ lvl: "warn", t: "ARM: Betaflight erwartet CH" + (armBf.aux + 5) + ", an der Funke liegt Arm auf CH" + armRadio + "." });
       else if (armBf && armRadio) hints.unshift({ lvl: "ok", t: "ARM passt: Betaflight und Funke auf CH" + armRadio + "." });

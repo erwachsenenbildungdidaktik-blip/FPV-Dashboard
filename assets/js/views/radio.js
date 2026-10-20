@@ -24,6 +24,12 @@ const FUNCTIONS = [
   "Prearm", "GPS Rescue", "Blackbox", "OSD aus", "Rate-Profil", "Ansage / Timer", "Sonstiges",
 ];
 
+// Mit Maus (Windows-Programm, Laptop-Browser) Klick und Rechtsklick, sonst
+// (Handy, APK) Tippen und lang drücken. Bestimmt nur die Hinweistexte.
+const MOUSE = typeof matchMedia === "function" && matchMedia("(hover: hover) and (pointer: fine)").matches;
+const HINT_SHOW = MOUSE ? "Klick zeigt die Belegung" : "Antippen zeigt die Belegung";
+const HINT_EDIT = MOUSE ? "Rechtsklick" : "lang drücken";
+
 const CHANNELS = [];
 for (let c = 5; c <= 16; c++) CHANNELS.push({ v: c, label: "CH" + c + " (AUX" + (c - 4) + ")" });
 
@@ -84,6 +90,46 @@ export function createRadio(ctx) {
     try {
       localStorage.setItem(LS, current || "");
     } catch (e) {}
+  }
+
+  // Gewählte Drohne, pro Gerät gemerkt. Jede Drohne hat auf derselben Funke
+  // ihre eigene Belegung, wie in EdgeTX ein Modell pro Drohne.
+  let curDrone = "";
+  try {
+    curDrone = localStorage.getItem(LS + ":drone") || "";
+  } catch (e) {}
+
+  function drone() {
+    const s = S();
+    return s.drones.find((d) => d.id === curDrone) || (ctx.activeDrone && ctx.activeDrone()) || s.drones[0] || null;
+  }
+
+  function dKey() {
+    const d = drone();
+    return d ? d.id : "_";
+  }
+
+  /* Früher gab es eine Belegung pro Funke (map). Sie gehört jetzt der ersten
+     zugeordneten Drohne, sonst dem Seeker 3, sonst der ersten Drohne. */
+  function migrate(r) {
+    if (r.maps) return false;
+    r.maps = {};
+    if (r.map && Object.keys(r.map).length) {
+      const s = S();
+      const known = (id) => s.drones.some((d) => d.id === id);
+      const owner =
+        (r.droneIds || []).find(known) || (known("default-drone-1") ? "default-drone-1" : s.drones[0] ? s.drones[0].id : "_");
+      r.maps[owner] = r.map;
+    }
+    delete r.map;
+    return true;
+  }
+
+  function curMap(r, create) {
+    migrate(r);
+    const k = dKey();
+    if (create && !r.maps[k]) r.maps[k] = {};
+    return r.maps[k] || {};
   }
 
   // Bild oder Zeichnung, pro Gerät gemerkt.
@@ -193,7 +239,7 @@ export function createRadio(ctx) {
   }
 
   function mapOf(r, key) {
-    return (r.map || {})[key] || null;
+    return curMap(r)[key] || null;
   }
 
   function isMapped(m) {
@@ -299,7 +345,7 @@ export function createRadio(ctx) {
             .filter(Boolean)
             .join(" · ");
           return (
-            '<tr data-act="rd-ctl" data-key="' + h(x.c.key) + '"><td>' + (x.m.ch ? "CH" + x.m.ch : "—") + "</td><td>" + h(x.c.label) +
+            '<tr data-act="rd-row" data-key="' + h(x.c.key) + '"><td>' + (x.m.ch ? "CH" + x.m.ch : "—") + "</td><td>" + h(x.c.label) +
             "</td><td>" + h(x.m.fn || "—") + "</td><td>" + h(pos || x.m.note || "") + "</td></tr>"
           );
         })
@@ -345,7 +391,7 @@ export function createRadio(ctx) {
     } else {
       const open = all.filter((c) => !pins[c.key]).length;
       out +=
-        '<small class="lp-small">Punkte antippen zum Belegen.' + (open ? " " + open + " Elemente sind noch nicht auf dem Bild platziert." : "") + "</small>" +
+        '<small class="lp-small">' + HINT_SHOW + ", " + HINT_EDIT + " zum Ändern." + (open ? " " + open + " Elemente sind noch nicht auf dem Bild platziert." : "") + "</small>" +
         '<div style="margin-top:6px"><button class="btn btn--sm" data-act="rd-place">Elemente platzieren</button></div>';
     }
     return out;
@@ -403,14 +449,31 @@ export function createRadio(ctx) {
       return;
     }
 
-    if (list.length > 1) {
-      out +=
-        '<div class="levels" role="tablist" style="margin-bottom:12px">' +
-        list.map((x) => '<button class="level-tab" role="tab" data-act="rd-pick" data-id="' + x.id + '" aria-selected="' + (x.id === r.id) + '">' + h(x.name) + "</button>").join("") +
-        "</div>";
-    }
+    let migrated = false;
+    list.forEach((x) => (migrated = migrate(x) || migrated));
+    if (migrated) ctx.save();
 
-    const drones = S().drones.filter((d) => (r.droneIds || []).indexOf(d.id) !== -1);
+    const d = drone();
+    out +=
+      '<div class="form-row rd-pickers">' +
+      (S().drones.length
+        ? '<label class="field"><span class="label">Drohne</span><select id="rd-drone">' +
+          S().drones.map((x) => '<option value="' + x.id + '"' + (d && x.id === d.id ? " selected" : "") + ">" + h(x.name) + "</option>").join("") +
+          "</select></label>"
+        : "") +
+      '<label class="field"><span class="label">Funke</span><select id="rd-radio">' +
+      list.map((x) => '<option value="' + x.id + '"' + (x.id === r.id ? " selected" : "") + ">" + h(x.name) + "</option>").join("") +
+      "</select></label></div>";
+
+    // Leere Belegung: von einer anderen Drohne übernehmen.
+    const others = Object.keys(r.maps || {}).filter((k) => k !== dKey() && Object.keys(r.maps[k]).length && S().drones.some((x) => x.id === k));
+    const copyFrom =
+      !Object.keys(curMap(r)).length && others.length
+        ? '<div class="lp-msg rd-copyfrom">Für ' + h(d ? d.name : "diese Drohne") + " ist auf dieser Funke noch nichts belegt. " +
+          others.map((k) => '<button class="btn btn--sm" data-act="rd-copyfrom" data-id="' + k + '">Belegung von ' + h(S().drones.find((x) => x.id === k).name) + " übernehmen</button>").join(" ") +
+          "</div>"
+        : "";
+
     const hints = checks(r);
     const showPhoto = !!r.photoId && (viewMode === "photo" || !TEMPLATES[r.template]);
     // Auf dem Bild sind alle Elemente platzierbar, darunter nur die ohne Platz.
@@ -421,11 +484,12 @@ export function createRadio(ctx) {
       '<div style="display:flex;justify-content:space-between;gap:9px;align-items:flex-start;flex-wrap:wrap">' +
       "<div><h3>" + h(r.name) + "</h3>" +
       '<div class="row__meta">' + (TEMPLATES[r.template] ? h(TEMPLATES[r.template].name) + " · Mode 2" : "Eigene Funke") +
-      (drones.length ? " · für " + drones.map((d) => h(d.name)).join(", ") : "") + "</div></div>" +
+      (d ? " · Belegung für " + h(d.name) : "") + "</div></div>" +
       '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
       '<button class="btn btn--sm" data-act="rd-copy">Als Text kopieren</button>' +
       '<button class="btn btn--sm" data-act="rd-edit" data-id="' + r.id + '">Bearbeiten</button></div></div>' +
       (r.note ? '<div class="row__meta">' + h(r.note) + "</div>" : "") +
+      copyFrom +
       (r.photoId && TEMPLATES[r.template]
         ? '<div class="levels" role="tablist" style="margin-top:10px">' +
           '<button class="level-tab" role="tab" data-act="rd-view" data-mode="photo" aria-selected="' + (showPhoto) + '">Bild</button>' +
@@ -434,7 +498,7 @@ export function createRadio(ctx) {
       (showPhoto ? photoBlock(r) : "") +
       (!showPhoto && TEMPLATES[r.template]
         ? '<div class="rd-wrap">' + svg(r) + "</div>" +
-          '<small class="lp-small">Schematisch, nicht massstabsgetreu. Belegte Elemente leuchten, die Zahl darunter ist der Kanal. Antippen zum Belegen.' +
+          '<small class="lp-small">Schematisch, nicht massstabsgetreu. Belegte Elemente leuchten, die Zahl darunter ist der Kanal. ' + HINT_SHOW + ", " + HINT_EDIT + " zum Ändern." +
           (r.photoId ? "" : " Eigenes Bild (z. B. aus der Bedienungsanleitung) unten bei <em>Unterlagen</em> hinzufügen.") + "</small>"
         : "") +
       (extras.length && !placing
@@ -502,7 +566,7 @@ export function createRadio(ctx) {
       Object.assign(target, rec, { name: rec.name || "Funke" });
     } else {
       const tpl = $("#rd-tpl").value;
-      const nr = Object.assign({ id: uid(), template: tpl, ctlEdit: {}, extra: [], map: {} }, rec);
+      const nr = Object.assign({ id: uid(), template: tpl, ctlEdit: {}, extra: [], maps: {} }, rec);
       if (!nr.name) nr.name = TEMPLATES[tpl] ? TEMPLATES[tpl].name : "Meine Funke";
       if (!nr.manualUrl && TEMPLATES[tpl] && TEMPLATES[tpl].manualUrl) nr.manualUrl = TEMPLATES[tpl].manualUrl;
       radios().push(nr);
@@ -519,7 +583,7 @@ export function createRadio(ctx) {
 
   function quick(tpl) {
     const nr = {
-      id: uid(), template: tpl, name: TEMPLATES[tpl].name, ctlEdit: {}, extra: [], map: {},
+      id: uid(), template: tpl, name: TEMPLATES[tpl].name, ctlEdit: {}, extra: [], maps: {},
       manualUrl: TEMPLATES[tpl].manualUrl || "",
       droneIds: S().drones.length === 1 ? [S().drones[0].id] : [], note: "",
     };
@@ -582,14 +646,14 @@ export function createRadio(ctx) {
       if (kind !== tplKind) r.ctlEdit[key] = Object.assign({}, r.ctlEdit[key], { kind: kind });
       else if (r.ctlEdit[key]) delete r.ctlEdit[key].kind;
     }
-    r.map = r.map || {};
-    r.map[key] = {
+    const map = curMap(r, true);
+    map[key] = {
       fn: $("#rc-fn").value.trim(),
       ch: Number($("#rc-ch").value) || "",
       pos: $$(".rc-pos").map((x) => x.value.trim()),
       note: $("#rc-note").value.trim(),
     };
-    if (!isMapped(r.map[key])) delete r.map[key];
+    if (!isMapped(map[key])) delete map[key];
     ctx.save();
     ctx.closeDialog();
     render();
@@ -660,7 +724,7 @@ export function createRadio(ctx) {
         if (placing) {
           placeKey = el.dataset.key;
           render();
-        } else ctlDialog(el.dataset.key);
+        } else showTip(el, el.dataset.key);
         return true;
       case "rd-pin-del":
         if (r && r.pins) delete r.pins[el.dataset.key];
@@ -722,13 +786,26 @@ export function createRadio(ctx) {
         }
         return true;
       case "rd-ctl":
+        showTip(el, el.dataset.key);
+        return true;
+      case "rd-row":
         ctlDialog(el.dataset.key);
         return true;
+      case "rd-copyfrom": {
+        const src = (r.maps || {})[el.dataset.id];
+        if (src) {
+          r.maps[dKey()] = JSON.parse(JSON.stringify(src));
+          ctx.save();
+          render();
+          ctx.toast("Belegung übernommen");
+        }
+        return true;
+      }
       case "rd-ctl-save":
         ctlSave(el.dataset.key);
         return true;
       case "rd-ctl-clear":
-        if (r && r.map) delete r.map[el.dataset.key];
+        if (r) delete curMap(r)[el.dataset.key];
         ctx.save();
         ctx.closeDialog();
         render();
@@ -736,7 +813,8 @@ export function createRadio(ctx) {
       case "rd-ctl-del":
         if (r && window.confirm("Dieses Element entfernen?")) {
           r.extra = (r.extra || []).filter((x) => x.key !== el.dataset.key);
-          if (r.map) delete r.map[el.dataset.key];
+          migrate(r);
+          Object.keys(r.maps).forEach((k) => delete r.maps[k][el.dataset.key]);
           ctx.save();
           ctx.closeDialog();
           render();
@@ -755,6 +833,21 @@ export function createRadio(ctx) {
   // Art geändert: Dialog mit passenden Stellungen neu aufbauen, Eingaben behalten.
   function change(ev) {
     const t = ev.target;
+    if (t && (t.id === "rd-drone" || t.id === "rd-radio")) {
+      if (t.id === "rd-drone") {
+        curDrone = t.value;
+        try {
+          localStorage.setItem(LS + ":drone", curDrone);
+        } catch (e) {}
+      } else {
+        current = t.value;
+        remember();
+      }
+      placing = false;
+      hideTip();
+      render();
+      return true;
+    }
     if (t && (t.dataset.act === "rd-file" || t.dataset.act === "rd-relink")) {
       const r = active();
       if (r) addFiles(r, t.files, t.dataset.act === "rd-relink" ? t.dataset.id : null);
@@ -772,6 +865,112 @@ export function createRadio(ctx) {
     return true;
   }
 
+  /* ------------------------------------- Kurz tippen, lang drücken */
+
+  // Kurz tippen zeigt in einer Blase, was das Element macht.
+  function showTip(el, key) {
+    const r = active();
+    const c = r && ctlOf(r, key);
+    if (!c) return;
+    const m = mapOf(r, key);
+    let tip = $("#rd-tip");
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.id = "rd-tip";
+      tip.className = "rd-tip";
+      tip.setAttribute("role", "status");
+      document.body.appendChild(tip);
+    }
+    const pos = isMapped(m)
+      ? KINDS[c.kind].pos.map((p, i) => ((m.pos || [])[i] ? p + " = " + m.pos[i] : "")).filter(Boolean).join(", ")
+      : "";
+    tip.innerHTML =
+      "<strong>" + h(c.label) + "</strong>" +
+      (isMapped(m)
+        ? "<span>" + h([m.ch ? "CH" + m.ch + " (AUX" + (m.ch - 4) + ")" : "ohne Kanal", m.fn || ""].filter(Boolean).join(" · ")) + "</span>" +
+          (pos ? "<span>" + h(pos) + "</span>" : "") +
+          (m.note ? "<span>" + h(m.note) + "</span>" : "")
+        : "<span>Noch nicht belegt</span>") +
+      "<small>" + (MOUSE ? "Rechtsklick" : "Lang drücken") + " zum " + (isMapped(m) ? "Ändern" : "Belegen") + "</small>";
+    tip.hidden = false;
+    const b = el.getBoundingClientRect();
+    const w = tip.offsetWidth, ht = tip.offsetHeight;
+    const left = Math.min(window.innerWidth - w - 8, Math.max(8, b.left + b.width / 2 - w / 2));
+    let top = b.top - ht - 8;
+    if (top < 8) top = b.bottom + 8;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+    clearTimeout(showTip._t);
+    showTip._t = setTimeout(hideTip, 6000);
+  }
+
+  function hideTip() {
+    const tip = $("#rd-tip");
+    if (tip) tip.hidden = true;
+  }
+
+  // Lang drücken (etwa eine halbe Sekunde) oder Rechtsklick öffnet die Belegung.
+  const PRESS = "#view-radio .rd-ctl, #view-radio .rd-pin, #view-radio .rd-tile";
+  let press = null;
+  let suppressClick = 0;
+
+  let pressOpened = false; // dieses Drücken hat den Dialog schon geöffnet
+
+  // Nach langem Drücken folgt beim Loslassen ein Klick, nach Rechtsklick nicht.
+  function openFromPress(el, fromMenu) {
+    press = null;
+    pressOpened = !fromMenu;
+    suppressClick = fromMenu ? 0 : Date.now();
+    hideTip();
+    try {
+      if (navigator.vibrate) navigator.vibrate(15);
+    } catch (e) {}
+    ctlDialog(el.dataset.key);
+  }
+
+  document.addEventListener("pointerdown", (ev) => {
+    const el = ev.target && ev.target.closest && ev.target.closest(PRESS);
+    if (!el || !el.closest("#rd-tip")) hideTip();
+    pressOpened = false;
+    if (!el || placing || ev.button > 0) return;
+    if (press) clearTimeout(press.t);
+    press = { el: el, x: ev.clientX, y: ev.clientY, t: setTimeout(() => openFromPress(el), 500) };
+  });
+  document.addEventListener("pointermove", (ev) => {
+    if (press && Math.hypot(ev.clientX - press.x, ev.clientY - press.y) > 10) {
+      clearTimeout(press.t);
+      press = null;
+    }
+  });
+  ["pointerup", "pointercancel"].forEach((t) =>
+    document.addEventListener(t, () => {
+      if (press) clearTimeout(press.t);
+      press = null;
+    })
+  );
+  document.addEventListener("contextmenu", (ev) => {
+    const el = ev.target && ev.target.closest && ev.target.closest(PRESS);
+    if (!el) return;
+    ev.preventDefault();
+    // Android meldet ein langes Drücken auch als contextmenu: nur einmal öffnen.
+    if (pressOpened || placing) return;
+    if (press) clearTimeout(press.t);
+    openFromPress(el, true);
+  });
+  // Der Klick nach dem Loslassen darf den eben geöffneten Dialog nicht schliessen.
+  document.addEventListener(
+    "click",
+    (ev) => {
+      if (suppressClick && Date.now() - suppressClick < 800) {
+        suppressClick = 0;
+        ev.stopPropagation();
+        ev.preventDefault();
+      }
+    },
+    true
+  );
+  window.addEventListener("scroll", hideTip, { passive: true });
+
   // Tastatur: Enter oder Leertaste auf einem Element der Zeichnung.
   function keydown(ev) {
     const g = ev.target && ev.target.closest && ev.target.closest(".rd-ctl");
@@ -782,4 +981,10 @@ export function createRadio(ctx) {
   }
 
   return { render: render, click: click, change: change, keydown: keydown, checks: (r) => checks(r) };
+}
+
+// Belegung einer Funke für eine Drohne, auch für ältere Datensätze (map).
+export function radioMapFor(r, droneId) {
+  if (r.maps) return r.maps[droneId] || {};
+  return r.map || {};
 }
