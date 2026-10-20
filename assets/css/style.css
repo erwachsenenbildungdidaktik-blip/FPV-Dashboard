@@ -832,3 +832,15 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(3px); }
 .rd-manual { display: inline-block; text-decoration: none; }
 .rd-docs { margin-top: 8px; }
 .rd-fixed { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.rd-pickers { margin-bottom: 4px; }
+.rd-ctl, .rd-pin, .rd-tile { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.rd-copyfrom { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0 0; }
+.rd-tip {
+  position: fixed; z-index: 60; max-width: min(18rem, calc(100vw - 16px));
+  background: var(--bg-1); color: var(--text); border: 1px solid var(--accent-line); border-radius: var(--r-sm);
+  padding: 8px 10px; box-shadow: 0 6px 20px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 2px; font-size: 0.76rem; line-height: 1.4;
+  pointer-events: none;
+}
+.rd-tip[hidden] { display: none; }
+.rd-tip strong { font-size: 0.8rem; }
+.rd-tip small { color: var(--dim); font-size: 0.66rem; margin-top: 2px; }

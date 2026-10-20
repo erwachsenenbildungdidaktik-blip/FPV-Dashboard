@@ -79,6 +79,7 @@ import { createBetaflight } from "./views/betaflight.js";
   });
 
   const radio = createRadio({
+    activeDrone: () => workshop.activeDrone(),
     state: () => state,
     save: save,
     openDialog: (t, b, f) => openDialog(t, b, f),

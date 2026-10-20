@@ -122,15 +122,15 @@ save`;
 
   // Mit Funke
   await A.click('.tab[data-view=radio]'); await A.click('[data-act=rd-quick]');
-  await A.click('#view-radio .rd-ctl[data-key=SF]'); await A.fill('#rc-fn', 'Arm'); await A.selectOption('#rc-ch', '5'); await A.click('[data-act=rd-ctl-save]');
-  await A.click('#view-radio .rd-ctl[data-key=SB]'); await A.fill('#rc-fn', 'Angle'); await A.selectOption('#rc-ch', '6'); await A.click('[data-act=rd-ctl-save]');
+  await A.click('#view-radio .rd-ctl[data-key=SF]', { button: 'right' }); await A.fill('#rc-fn', 'Arm'); await A.selectOption('#rc-ch', '5'); await A.click('[data-act=rd-ctl-save]');
+  await A.click('#view-radio .rd-ctl[data-key=SB]', { button: 'right' }); await A.fill('#rc-fn', 'Angle'); await A.selectOption('#rc-ch', '6'); await A.click('[data-act=rd-ctl-save]');
   await A.click('.tab[data-view=betaflight]');
   mv = await view(A);
   ok(mv.includes('ARM passt: Betaflight und Funke auf CH5'), 'ARM passt');
   ok(mv.includes('SF (Arm)') && mv.includes('SB (Angle)'), 'Funke-Spalte zeigt Schalter');
   ok(mv.includes('FLIP OVER AFTER CRASH hängt in Betaflight an CH7'), 'Warnung: CH7 an der Funke nicht belegt');
   await A.click('.tab[data-view=radio]');
-  await A.click('#view-radio .rd-ctl[data-key=SF]'); await A.selectOption('#rc-ch', '8'); await A.click('[data-act=rd-ctl-save]');
+  await A.click('#view-radio .rd-ctl[data-key=SF]', { button: 'right' }); await A.selectOption('#rc-ch', '8'); await A.click('[data-act=rd-ctl-save]');
   await A.click('.tab[data-view=betaflight]');
   ok((await view(A)).includes('ARM: Betaflight erwartet CH5, an der Funke liegt Arm auf CH8.'), 'Warnung ARM-Kanal verschieden');
 
